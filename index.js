@@ -1,5 +1,6 @@
 const tmi = require('tmi.js');
 const fs = require('fs');
+const fetch = require('node-fetch');
 
 let content = undefined;
 try {
@@ -33,7 +34,8 @@ client.on('join', (channel, username, isSelf) => {
 
 client.on('message', (channel, tags, message, self) => {
 	if (self) return;
-	switch(message.toLowerCase()) {
+	var message_split = message.match(/\S+/g);
+	switch(message_split[0].toLowerCase()) {
 		case '!heh':
 			client.say(channel, 'kek');
 			break;
@@ -56,5 +58,26 @@ client.on('message', (channel, tags, message, self) => {
 		case '!lurk':
 			client.say(channel, "Pay no attention to that " + tags['display-name'] + " behind the curtain!");
 			break;
+		case '!so':
+			if (!hasThePower(tags)) {
+				break;
+			}
+			var recipient = message_split[1];
+			if (recipient[0] == '@') {
+				recipient = recipient.substring(1);
+			}
+			client.say(channel, `Shoutout to ${recipient}! Go send them some love and support over at twitch.tv/${recipient.toLowerCase()} TwitchLit CurseLit TwitchLit CurseLit`);
+			break;
+		case '!saygoodbye':
+			if (!hasThePower(tags)) {
+				break;
+			}
+			client.say(channel, 'This is DanLeikrBot, signing off!');
+			process.exit();
+			break;
 	}
 });
+
+function hasThePower(tags) {
+	return tags['mod'] || tags['username'] == 'danleikr';
+}
