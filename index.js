@@ -32,12 +32,35 @@ client.on('join', (channel, username, isSelf) => {
 	}
 });
 
+var publicCommands = [
+	"!commands",
+	"!twitter",
+	"!instagram",
+	"!youtube",
+	"!discord",
+	"!lurk",
+	"!poll"
+]
+
+var modCommands = [
+	"!so",
+	"!saygoobye"
+]
+
 client.on('message', (channel, tags, message, self) => {
 	if (self) return;
 	var message_split = message.match(/\S+/g);
-	switch(message_split[0].toLowerCase()) {
+	var command = message_split[0].toLowerCase();
+	var hasPermissions = hasThePower(tags);
+	if (!publicCommands.concat(modCommands).includes(command)) {
+		return;
+	}
+	switch(command) {
 		case '!heh':
 			client.say(channel, 'kek');
+			break;
+		case '!commands':
+			client.say(channel, `List of available commands: ${publicCommands.join(", ")}`);
 			break;
 		case '!twitter':
 			client.say(channel, "Check out DanLeikr's Twitter here: https://twitter.com/DanLeikr");
@@ -58,8 +81,11 @@ client.on('message', (channel, tags, message, self) => {
 		case '!lurk':
 			client.say(channel, "Pay no attention to that " + tags['display-name'] + " behind the curtain!");
 			break;
+		case '!poll':
+			client.say(channel, "Vote on the next game Dan does a playthrough of here: https://twitter.com/DanLeikr/status/1348784546771304450");
+			break;
 		case '!so':
-			if (!hasThePower(tags)) {
+			if (!hasPermissions) {
 				break;
 			}
 			var recipient = message_split[1];
@@ -69,7 +95,7 @@ client.on('message', (channel, tags, message, self) => {
 			client.say(channel, `Shoutout to ${recipient}! Go send them some love and support over at twitch.tv/${recipient.toLowerCase()} TwitchLit CurseLit TwitchLit CurseLit`);
 			break;
 		case '!saygoodbye':
-			if (!hasThePower(tags)) {
+			if (!hasPermissions) {
 				break;
 			}
 			client.say(channel, 'This is DanLeikrBot, signing off!');
