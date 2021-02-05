@@ -44,7 +44,7 @@ var publicCommands = [
 
 var modCommands = [
 	"!so",
-	"!saygoobye"
+	"!saygoodbye"
 ]
 
 client.on('message', (channel, tags, message, self) => {
