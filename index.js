@@ -25,7 +25,6 @@ const client = new tmi.client({
 });
 
 client.connect();
-
 client.on('join', (channel, username, isSelf) => {
 	if (isSelf) {
 		client.say('danleikr', "Hello world! DanLeikrBot is here!").catch(err =>console.log(err));
@@ -40,12 +39,12 @@ var publicCommands = [
 	"!discord",
 	"!lurk",
 	"!poll"
-]
+];
 
 var modCommands = [
 	"!so",
 	"!saygoodbye"
-]
+];
 
 client.on('message', (channel, tags, message, self) => {
 	if (self) return;
@@ -82,7 +81,7 @@ client.on('message', (channel, tags, message, self) => {
 			client.say(channel, "Pay no attention to that " + tags['display-name'] + " behind the curtain!");
 			break;
 		case '!poll':
-			client.say(channel, "Vote on the next game Dan does a playthrough of here: https://twitter.com/DanLeikr/status/1348784546771304450");
+			client.say(channel, "Vote on the next game Dan does a playthrough of here: " + pollLink);
 			break;
 		case '!so':
 			if (!hasPermissions) {
@@ -107,3 +106,26 @@ client.on('message', (channel, tags, message, self) => {
 function hasThePower(tags) {
 	return tags['mod'] || tags['username'] == 'danleikr';
 }
+
+const quarterHourMilliseconds = 600000;
+const channelName = "#danleikr";
+
+// Encouraging viewers to follow
+var pleaseFollow = [
+	"If you're enjoying the stream, please consider following the channel and showing some support! <3",
+	"Don't forget to follow the channel if you're having fun :)",
+	"I've heard that following DanLeikr makes you at least marginally cooler Kappa"
+];
+var pleaseFollowCounter = 0;
+var pleaseFollowDelay = 0;
+setTimeout(() => setInterval(function(){ 
+		client.say(channelName, pleaseFollow[pleaseFollowCounter % pleaseFollow.length]);
+		pleaseFollowCounter += 1;
+	}, quarterHourMilliseconds * 2), pleaseFollowDelay);
+
+// Next game poll
+var nextGameDelay = quarterHourMilliseconds;
+var pollLink = "https://twitter.com/DanLeikr/status/1358793822675881984";
+setTimeout(() => setInterval(function(){
+	client.say(channelName, "Which game should be Dan's next let's play? Vote now! " + pollLink);
+}, quarterHourMilliseconds * 2), nextGameDelay);
