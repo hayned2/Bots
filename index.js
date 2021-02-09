@@ -46,8 +46,14 @@ var modCommands = [
 	"!saygoodbye"
 ];
 
+var selfLastSent = false;
+
 client.on('message', (channel, tags, message, self) => {
-	if (self) return;
+	if (self) {
+		selfLastSent = true;
+		return;
+	}
+	selfLastSent = false;
 	var message_split = message.match(/\S+/g);
 	var command = message_split[0].toLowerCase();
 	var hasPermissions = hasThePower(tags);
@@ -118,14 +124,16 @@ var pleaseFollow = [
 ];
 var pleaseFollowCounter = 0;
 var pleaseFollowDelay = 0;
-setTimeout(() => setInterval(function(){ 
-		client.say(channelName, pleaseFollow[pleaseFollowCounter % pleaseFollow.length]);
-		pleaseFollowCounter += 1;
-	}, quarterHourMilliseconds * 2), pleaseFollowDelay);
+setTimeout(() => setInterval(function(){
+	if (selfLastSent) return;
+	client.say(channelName, pleaseFollow[pleaseFollowCounter % pleaseFollow.length]);
+	pleaseFollowCounter += 1;
+}, quarterHourMilliseconds * 2), pleaseFollowDelay);
 
 // Next game poll
 var nextGameDelay = quarterHourMilliseconds;
 var pollLink = "https://twitter.com/DanLeikr/status/1358793822675881984";
 setTimeout(() => setInterval(function(){
+	if (selfLastSent) return;
 	client.say(channelName, "Which game should be Dan's next let's play? Vote now! " + pollLink);
 }, quarterHourMilliseconds * 2), nextGameDelay);
