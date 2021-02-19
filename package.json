@@ -10,8 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "node-fetch": "^2.6.1",
+    "express": "^4.17.1",
     "tmi.js": "^1.5.0",
-    "twitch-js": "^1.2.17"
+    "twitch-js": "^2.0.0-beta.42"
   }
-}
+} 
