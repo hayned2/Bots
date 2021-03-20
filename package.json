@@ -11,7 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "tmi.js": "^1.5.0",
-    "twitch-js": "^2.0.0-beta.42"
+    "twitch": "^4.4.11",
+    "twitch-auth": "^4.4.11",
+    "twitch-chat-client": "^4.4.11",
+    "twitch-js": "^2.0.0-beta.42",
+    "twitch-pubsub-client": "^4.4.11"
   }
-} 
+}
