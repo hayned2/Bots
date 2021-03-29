@@ -76,7 +76,7 @@ async function main() {
 		"!insta"
 	]
 
-	const pollLink = ""
+	const pollLink = "https://twitter.com/DanLeikr/status/1374742541116043264"
 
 	chatClient.onMessage((channel, user, message, msg) => {
 		console.log(user + ": " + message);
@@ -133,6 +133,21 @@ async function main() {
     				break;
     			}
     			changeCurrentGoal(message_split.slice(1).join(" "));
+    		case "!quote":
+    		case "!quotes":
+    			var quoteNumber = null;
+    			if (message_split.length > 1 && !isNaN(message_split[1])) {
+    				quoteNumber = parseInt(message_split[1]) - 1;
+    			}
+    			getQuote(quoteNumber);
+    			break;
+    		case "!addquote":
+    		case "!setquote":
+    			if (!hasThePower(msg.userInfo)) {
+    				break;
+    			}
+    			setQuote(message_split.slice(1).join(" "));
+    			break;
     	}
 	});
 
@@ -146,27 +161,30 @@ async function main() {
 	}
 
 	const quarterHourMilliseconds = 900000;
-	var selfLastSent = false;
+	var selfLastSent = true;
 
 	// Encouraging viewers to follow
-	var pleaseFollow = [
+	var reminders = [
 	    "If you're enjoying the stream, please consider following the channel and showing some support! <3",
+	    "Check out Dan's YouTube at https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g to see all of his past streams",
 	    "Don't forget to follow the channel if you're having fun :)",
-	    "I've heard that following DanLeikr makes you at least marginally cooler Kappa"
+	    "Follow Dan on Twitter (https://twitter.com/DanLeikr) to be updated about streams and uploads PogChamp",
+	    "I've heard that following DanLeikr makes you at least marginally cooler Kappa",
+		"Did you know that Dan uploads all of his VODs to YouTube at https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g ?"
 	];
-	var pleaseFollowCounter = 0;
-	var pleaseFollowDelay = 0;
+	var reminderCounter = 0;
+	var reminderDelay = 0;
 	setTimeout(() => setInterval(function() {
 	    if (selfLastSent) {
 	    	return;
 	    }
-	    sendMessage(pleaseFollow[pleaseFollowCounter % pleaseFollow.length]);
+	    sendMessage(reminders[reminderCounter % reminders.length]);
 	    selfLastSent = true;
-	    pleaseFollowCounter += 1;
-	}, quarterHourMilliseconds * 2), pleaseFollowDelay);
+	    reminderCounter += 1;
+	}, quarterHourMilliseconds), reminderDelay);
 
 	// Next game poll
-	var nextGameDelay = quarterHourMilliseconds;
+	var nextGameDelay = quarterHourMilliseconds * 1.5;
 	setTimeout(() => setInterval(function() {
 	    if (selfLastSent || pollLink.length == 0) {
 	    	return;
@@ -178,6 +196,34 @@ async function main() {
 	async function changeCurrentGoal(goal) {
 		await fs.writeFileSync('./Current Goal.txt', `Current Goal:\n${goal}`);
 	 	sendMessage("Current Goal has been updated to: " + goal);
+	}
+
+	function getRandomInt(max){
+		return Math.floor(Math.random() * Math.floor(max));
+	}
+
+	async function getQuote(quoteNumber) {
+		var quotes = await fs.readFileSync('./Quotes.txt', "utf8").split(/\r?\n/);
+		if (quoteNumber == null) {
+			quoteNumber = getRandomInt(quotes.length);
+		} 
+		else if (quoteNumber == "last") {
+			quoteNumber = quotes.length - 1;
+		}
+		else if (quoteNumber < 0 || quoteNumber > quotes.length) {
+			sendMessage(`Error - Choose a quote number between 1 and ${quotes.length}`);
+			return;
+		}
+		sendMessage(`Quote #${quoteNumber + 1}: ${quotes[quoteNumber]}`);
+	}
+
+	async function setQuote(quote) {
+		if (quote.replace(/\s+/g, '').length == 0) {
+			sendMessage("Silence is golden, but make sure you include a quote to be added next time ;)");
+			return;
+		}
+		await fs.appendFileSync('./Quotes.txt', '\n' + quote);
+		getQuote("last");
 	}
 }
 
