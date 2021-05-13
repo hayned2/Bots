@@ -58,12 +58,14 @@ async function main() {
 
 	const publicCommands = [
 		"!commands",
+		"!socials",
 		"!twitter",
 		"!instagram",
 		"!youtube",
 		"!discord",
 		"!lurk",
-		"!poll"
+		"!poll",
+		"!quote (number)"
 	];
 
 	const modCommands = [
@@ -76,7 +78,12 @@ async function main() {
 		"!insta"
 	]
 
-	const pollLink = "https://twitter.com/DanLeikr/status/1374742541116043264"
+	const pollLink = "";
+	const twitterLink = "https://twitter.com/DanLeikr";
+	const instaLink = "https://www.instagram.com/danleikr";
+	const youtubeLink = "https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g";
+	const discordName = "DanLeikr#7353";
+	var deaths = -1;
 
 	chatClient.onMessage((channel, user, message, msg) => {
 		console.log(user + ": " + message);
@@ -90,18 +97,22 @@ async function main() {
     		case "!commands":
     			sendMessage(`List of available commands: ${publicCommands.join(", ")}`);
     			break;
+    		case "!socials":
+    			sendMessage(`DanLeikr's Socials \nTwitter: ${twitterLink} \nYouTube: ${youtubeLink} \nInstagram: ${instaLink} \nDiscord: ${discordName}`);
+    			break;
     		case "!twitter":
-    			sendMessage("Check out DanLeikr's Twitter here: https://twitter.com/DanLeikr");
+    		case "!twatter":
+    			sendMessage(`Check out DanLeikr's Twitter here: ${twitterLink}`);
     			break;
     		case "!insta":
     		case "!instagram":
-    			sendMessage("Check out DanLeikr's Instagram here: https://www.instagram.com/danleikr");
+    			sendMessage(`Check out DanLeikr's Instagram here: ${instaLink}`);
     			break;
     		case "!youtube":
-    			sendMessage("Check out DanLeikr's YouTube here: https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g");
+    			sendMessage(`Check out DanLeikr's YouTube here: ${youtubeLink}`);
     			break;
     		case "!discord":
-    			sendMessage("DanLeikr's Discord name is DanLeikr#7353");
+    			sendMessage(`DanLeikr's Discord name is ${discordName}`);
     			break;
     		case "!lurk":
     			sendMessage("Thanks for the lurk " + user + "! Enjoy creeping around in the shadowy corner :)");
@@ -133,6 +144,7 @@ async function main() {
     				break;
     			}
     			changeCurrentGoal(message_split.slice(1).join(" "));
+    			break;
     		case "!quote":
     		case "!quotes":
     			var quoteNumber = null;
@@ -148,7 +160,19 @@ async function main() {
     			}
     			setQuote(message_split.slice(1).join(" "));
     			break;
-    	}
+    		case "!adddeath":
+    			if (!hasThePower(msg.userInfo)) {
+    				break;
+    			}
+    			addDeath();
+    			break;
+    		case "!setdeaths":
+    			if (!hasThePower(msg.userInfo)) {
+    				break;
+    			}
+    			setDeaths(message_split[1]);
+    			break;
+    	}	
 	});
 
 	function sendMessage(message) {
@@ -166,11 +190,11 @@ async function main() {
 	// Encouraging viewers to follow
 	var reminders = [
 	    "If you're enjoying the stream, please consider following the channel and showing some support! <3",
-	    "Check out Dan's YouTube at https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g to see all of his past streams",
+	    "Type '!command' to see a list of the commands DanLeikrBot knows",
 	    "Don't forget to follow the channel if you're having fun :)",
-	    "Follow Dan on Twitter (https://twitter.com/DanLeikr) to be updated about streams and uploads PogChamp",
+	    `Follow Dan on Twitter (${twitterLink}) to be updated about streams and uploads PogChamp`,
 	    "I've heard that following DanLeikr makes you at least marginally cooler Kappa",
-		"Did you know that Dan uploads all of his VODs to YouTube at https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g ?"
+	    "Connect with Dan through his socials by using the !socials command SeemsGood"
 	];
 	var reminderCounter = 0;
 	var reminderDelay = 0;
@@ -181,10 +205,10 @@ async function main() {
 	    sendMessage(reminders[reminderCounter % reminders.length]);
 	    selfLastSent = true;
 	    reminderCounter += 1;
-	}, quarterHourMilliseconds), reminderDelay);
+	}, quarterHourMilliseconds * 1.5), reminderDelay);
 
 	// Next game poll
-	var nextGameDelay = quarterHourMilliseconds * 1.5;
+	var nextGameDelay = quarterHourMilliseconds * 1.25;
 	setTimeout(() => setInterval(function() {
 	    if (selfLastSent || pollLink.length == 0) {
 	    	return;
@@ -194,7 +218,7 @@ async function main() {
 	}, quarterHourMilliseconds * 2), nextGameDelay);
 
 	async function changeCurrentGoal(goal) {
-		await fs.writeFileSync('./Current Goal.txt', `Current Goal:\n${goal}`);
+		fs.writeFileSync('./Current Goal.txt', `Current Goal:\n${goal}`);
 	 	sendMessage("Current Goal has been updated to: " + goal);
 	}
 
@@ -210,7 +234,7 @@ async function main() {
 		else if (quoteNumber == "last") {
 			quoteNumber = quotes.length - 1;
 		}
-		else if (quoteNumber < 0 || quoteNumber > quotes.length) {
+		else if (quoteNumber < 0 || quoteNumber >= quotes.length) {
 			sendMessage(`Error - Choose a quote number between 1 and ${quotes.length}`);
 			return;
 		}
@@ -224,6 +248,24 @@ async function main() {
 		}
 		await fs.appendFileSync('./Quotes.txt', '\n' + quote);
 		getQuote("last");
+	}
+
+	async function addDeath() {
+		var deaths = await fs.readFileSync('./Deaths.txt', 'utf8');
+		try {
+			deaths = parseInt(deaths.split(" ")[1]) + 1;
+		} catch {
+			deaths = 1;
+		}
+		setDeaths(deaths);
+	}
+
+	async function setDeaths(deaths) {
+		await fs.writeFileSync('./Deaths.txt', `Deaths: ${deaths}`);
+		//sendMessage("Death count updated RIP");
+		if (deaths == 69) {
+			sendMessage("Nice Kappa");
+		}
 	}
 }
 
