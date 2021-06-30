@@ -47,7 +47,7 @@ async function main() {
 	chatClient.onMessageFailed((channel, reason) => console.log(`Message '${message}' failed to send. Reason: '${reason}'`));
 
 	await chatClient.connect();
-	setTimeout(() => sendMessage("Hello World, DanLeikrBot is online!"), 1000);
+	setTimeout(() => sendMessage("Hello World, DanLeikrBot is online!"), 3000);
 
 	const apiClient = new ApiClient({ authProvider });
 	const pubSubClient = new PubSubClient();
@@ -240,7 +240,7 @@ async function main() {
 	// Encouraging viewers to follow
 	var reminders = [
 	    "If you're enjoying the stream, please consider following the channel and showing some support! <3",
-	    "Type '!command' to see a list of the commands DanLeikrBot knows",
+	    "Type '!commands' to see a list of the commands DanLeikrBot knows",
 	    "Don't forget to follow the channel if you're having fun :)",
 	    `Follow Dan on Twitter (${twitterLink}) to be updated about streams and uploads PogChamp`,
 	    "I've heard that following DanLeikr makes you at least marginally cooler Kappa",
