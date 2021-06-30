@@ -1,3 +1,33 @@
+body {
+    overflow: hidden;
+    margin: 0;
+}
+
+#vid-alert-container,
+#test-vid-container {
+    position: absolute;
+    top: 70%;
+}
+
 .hidden {
     display: none;
+}
+
+.show-alert-vertical {
+    top: 70%;
+    animation: vertical-reveal 1s linear normal;
+}
+
+.hide-alert-vertical {
+    top: 70%;
+    animation: vertical-reveal 1s linear reverse;
+}
+
+@keyframes vertical-reveal {
+    0% {
+        top: 100%
+    }
+    100% {
+        top: 70%;
+    }
 }

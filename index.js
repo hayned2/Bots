@@ -56,6 +56,56 @@ async function main() {
 		sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
 	});
 
+	const WebSocket = require('ws');
+	let ws = undefined;
+	const heartbeat_msg = { type: "heartbeat" };
+	const url = "ws://127.0.0.1:8080/";
+	let pingTimeout = undefined;
+
+	function heartbeat() {
+		clearTimeout(pingTimeout);
+		ws.send(JSON.stringify(heartbeat_msg));
+		console.debug("Heartbeat received. Sending back to server.");
+
+		pingTimeout = setTimeout(() => {
+			ws.close();
+			console.warn("Connection has been terminated, no response from server during heartbeat.");
+			connectToWSS();
+		}, 30000 + 1000); // +1000 ms buffer for latency
+	}
+
+	function connectToWSS() {
+		ws = new WebSocket(url);
+
+		ws.onopen = () => {
+			console.debug("Handshake established.");
+			ws.send(JSON.stringify({ type: 'connection', id: 'bot' }));
+		}
+
+		ws.onmessage = (event) => {
+			let data = JSON.parse(event.data);
+			console.debug("Data received: ");
+			console.debug(data);
+
+			switch (data.type) {
+
+				case 'heartbeat': {
+					heartbeat();
+					break;
+				}
+
+			}
+		}
+
+		ws.onclose = () => {
+			clearTimeout(pingTimeout);
+			console.info("Connection has been closed.");
+			connectToWSS();
+		}
+	}
+
+	connectToWSS();
+
 	const publicCommands = [
 		"!commands",
 		"!socials",

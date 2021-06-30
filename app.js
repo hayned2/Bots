@@ -28,8 +28,6 @@ const checkConnection = setInterval(function ping() {
 
 // when the handshake is complete
 wss.on("connection", (ws, req) => {
-    // i need to figure out how to add some type of body to the initial req/msg
-
     ws.isAlive = true;
     console.log("Handshake established.");
 
@@ -40,12 +38,19 @@ wss.on("connection", (ws, req) => {
         data = JSON.parse(data);
         switch (data.type) {
 
+            case 'connection': {
+                if (data.id === "browser") client = ws;
+                else if (data.id === "bot") twitchBot = ws;
+            }
+
             case 'heartbeat': {
                 heartbeat(ws);
                 break;
             }
             
-            case 'message': {
+            // send all alerts to the client
+            case 'alert': {
+                client.send(data);
                 break;
             }
 
@@ -77,3 +82,16 @@ wss.on("close", () => {
 // the bot has. we just have to call server.close(callback) and have an if 
 // statement that checks whether the message says "goodbye" (or some variant. 
 // we don't want to accidentally kill the server before the stream is actually over)
+
+// to make testing easier, this will allow asynchronous input from the 
+// console so that I can send test alerts
+process.stdin.on('data', (data) => {
+    let testAlert = "helloThere";
+    data = data.toString().trim();
+    switch (data) {
+
+        case "test alert": {
+            client.send(JSON.stringify({ type: "alert", alertName: testAlert }));
+        }
+    }
+});
