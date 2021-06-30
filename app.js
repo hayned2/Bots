@@ -50,7 +50,7 @@ wss.on("connection", (ws, req) => {
             
             // send all alerts to the client
             case 'alert': {
-                client.send(data);
+                client.send(JSON.stringify(data));
                 break;
             }
 

@@ -52,9 +52,6 @@ async function main() {
 	const apiClient = new ApiClient({ authProvider });
 	const pubSubClient = new PubSubClient();
 	const userId = await pubSubClient.registerUserListener(apiClient);
-	const listener = await pubSubClient.onRedemption(userId, message => {
-		sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
-	});
 
 	const WebSocket = require('ws');
 	let ws = undefined;
@@ -65,7 +62,7 @@ async function main() {
 	function heartbeat() {
 		clearTimeout(pingTimeout);
 		ws.send(JSON.stringify(heartbeat_msg));
-		console.debug("Heartbeat received. Sending back to server.");
+		//console.debug("Heartbeat received. Sending back to server.");
 
 		pingTimeout = setTimeout(() => {
 			ws.close();
@@ -84,8 +81,8 @@ async function main() {
 
 		ws.onmessage = (event) => {
 			let data = JSON.parse(event.data);
-			console.debug("Data received: ");
-			console.debug(data);
+			//console.debug("Data received: ");
+			//console.debug(data);
 
 			switch (data.type) {
 
@@ -105,6 +102,16 @@ async function main() {
 	}
 
 	connectToWSS();
+
+	const listener = await pubSubClient.onRedemption(userId, message => {
+		sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
+		switch(message.rewardName) {
+			case 'Hello There':
+				ws.send(JSON.stringify({type: "alert", alertName: "helloThere"}));
+				break;
+		}
+	});
+
 
 	const publicCommands = [
 		"!commands",
