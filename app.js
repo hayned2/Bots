@@ -93,5 +93,8 @@ process.stdin.on('data', (data) => {
         case "test alert": {
             client.send(JSON.stringify({ type: "alert", alertName: testAlert }));
         }
+        case "cromulan": {
+            client.send(JSON.stringify({type: "alert", alertName: "cromulan"}));
+        }
     }
 });

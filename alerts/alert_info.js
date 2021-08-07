@@ -20,8 +20,8 @@ let alerts = {
         css: []
     },
     cromulan: {
-        src: "",
-        type: "",
+        src: "./media/SHOW ME WHAT YOU GOT.mp3",
+        type: "audio/mp3",
         css: []
     },
     bootyCheeks: {
