@@ -4,6 +4,11 @@ const fs = require('fs');
 const { ApiClient } = require('twitch');
 const { PubSubClient, PubSubRedemptionMessage } = require('twitch-pubsub-client');
 
+// print out any errors we didn't expect. We should be doing error handling for all promises, though
+process.on("unhandledRejection", (err, promise) => {
+	console.error("An unhandled error occured: ", err, promise);
+});
+
 async function main() {
 	const channelName = "#danleikr"
 	const clientInfo = JSON.parse(await fs.readFileSync('./clientInfo.json'));

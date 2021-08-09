@@ -5,6 +5,7 @@ const url = "ws://127.0.0.1:8080/";
 let alertQueue = [];
 let alertsPlaying = false;
 
+
 function heartbeat() {
     clearTimeout(window.pingTimeout);
     ws.send(JSON.stringify(heartbeat_msg));
@@ -58,37 +59,41 @@ function connectToWSS() {
     }
 }
 
+function getAlertType(alert) {
+    return alert.type.match(/video|audio/)[0];
+}
+
 // a function that will run alerts until queue is empty
 function playAlert(embedded = false) {
     // if the queue has more than the one alert we just pushed, then 
     // it should already be playing the alerts
     if (alertsPlaying && !embedded) return;
-    console.log(alertQueue);
+    console.debug(alertQueue);
 
     alertsPlaying = true;
     let toPlay = alerts[alertQueue.shift()];
-    let vid = document.getElementById("vid-alert");
+    let alert = document.getElementById(`${getAlertType(toPlay)}-alert`);
 
-    vid.src = toPlay.src;
-    vid.type = toPlay.type;
-    vid.parentElement.className = toPlay.css[0] + " hidden";
+    alert.src = toPlay.src;
+    alert.type = toPlay.type;
+    alert.parentElement.className = toPlay.css[0] + " hidden"; // this isn't needed for audio alerts, but I don't think it'll affect things anyway
     // css[0] => show alert styles
     // css[1] => hide alert styles
 
-    vid.parentElement.addEventListener("animationend", () => {
+    alert.parentElement.addEventListener("animationend", () => {
         console.log("animation ended");
-        vid.parentElement.className = "";
-        vid.play();
+        alert.parentElement.className = "";
+        alert.play();
     }, { once: true });
 
-    vid.onended = function () {
-        vid.parentElement.className = toPlay.css[1];
-        vid.parentElement.addEventListener("animationend", () => {
-            vid.parentElement.className = "hidden";
-            if (alertQueue.length > 0) setTimeout(playAlert, 500, true); // timeout of 500 ms to make sure video is hidden
+    alert.onended = function () {
+        alert.parentElement.className = toPlay.css[1];
+        alert.parentElement.addEventListener("animationend", () => {
+            alert.parentElement.className = "hidden";
+            if (alertQueue.length > 0) setTimeout(playAlert, 500, true); // timeout of 500 ms to make sure alert is hidden/done
             else alertsPlaying = false;
         }, { once: true });
     }
 
-    vid.parentElement.classList.remove("hidden");
+    alert.parentElement.classList.remove("hidden");
 }

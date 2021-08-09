@@ -3,10 +3,14 @@ body {
     margin: 0;
 }
 
-#vid-alert-container,
-#test-vid-container {
+#page-container {
+    height: 100vh;
+}
+
+#vid-alert-container {
     position: absolute;
     top: 70%;
+    height: 10%;
 }
 
 .hidden {
