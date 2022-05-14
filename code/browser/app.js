@@ -86,15 +86,23 @@ wss.on("close", () => {
 // to make testing easier, this will allow asynchronous input from the 
 // console so that I can send test alerts
 process.stdin.on('data', (data) => {
-    let testAlert = "helloThere";
-    data = data.toString().trim();
-    switch (data) {
+    data = data.toString().trim().split(' ');
 
-        case "test alert": {
-            client.send(JSON.stringify({ type: "alert", alertName: testAlert }));
+    switch (data[0]) {
+
+        case "single": {
+            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
+            break;
         }
-        case "cromulan": {
-            client.send(JSON.stringify({type: "alert", alertName: "cromulan"}));
+
+        case "multi": {
+            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
+            break;
         }
+
+        default:
+            console.log(`'${data[1]}' not a valid command`)
     }
 });
