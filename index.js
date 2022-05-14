@@ -103,12 +103,14 @@ async function main() {
 
 	connectToWSS();
 
+	const browserRedemptions = {
+		"Hello There": "helloThere",
+	}
+
 	const listener = await pubSubClient.onRedemption(userId, message => {
 		sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
-		switch(message.rewardName) {
-			case 'Hello There':
-				ws.send(JSON.stringify({type: "alert", alertName: "helloThere"}));
-				break;
+		if (browserRedemptions.hasOwnProperty(message.rewardName)) {
+				ws.send(JSON.stringify({type: "alert", alertName: browserRedemptions[message.rewardName]}));
 		}
 	});
 
@@ -122,24 +124,34 @@ async function main() {
 		"!discord",
 		"!lurk",
 		"!poll",
-		"!quote (number)"
+		"!quote (number)",
+		"!bttv",
+		"!gamesbeaten"
 	];
 
-	const modCommands = [
-		"!so",
-		"!saygoodbye"
+	const bttvEmotes = [
+		"bobPlz",
+		"Hrrrr",
+		"catJAM",
+		"blobDance",
+		"monkaS",
+		"ThisIsFine",
+		"RIP",
+		"showMe",
+		"hollowParty",
+		"foxaPatPat",
+		"celesteSquish",
+		"Suavemente",
+		"modCheck"
 	]
 
-	const hiddenCommands = [
-		"!heh",
-		"!insta"
-	]
-
-	const pollLink = "";
+	const pollLink = "https://forms.gle/D3yYWGNMedhwcHL5A";
 	const twitterLink = "https://twitter.com/DanLeikr";
 	const instaLink = "https://www.instagram.com/danleikr";
 	const youtubeLink = "https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g";
 	const discordName = "DanLeikr#7353";
+	const charityLink = "";
+	const gamesLink = "https://docs.google.com/spreadsheets/d/1TAXZvduWWV_pzQrLfpN7plf26v4TsX7QvSXQflySark/edit?usp=sharing";
 	var deaths = -1;
 
 	chatClient.onMessage((channel, user, message, msg) => {
@@ -172,7 +184,7 @@ async function main() {
     			sendMessage(`DanLeikr's Discord name is ${discordName}`);
     			break;
     		case "!lurk":
-    			sendMessage("Thanks for the lurk " + user + "! Enjoy creeping around in the shadowy corner :)");
+    			sendMessage("Thanks for the lurk " + user + "! <3");
     			break;
     		case "!poll":
     			if (pollLink.length > 0) {
@@ -181,6 +193,13 @@ async function main() {
     				sendMessage("Dan isn't running a poll for his next game yet, but he will when he starts his next one!");
     			}
     			break;
+    		case "!bttv":
+				sendMessage(`${bttvEmotes.join(" ")}`);
+				break;
+			case "!gamesbeaten":
+			case "!gameslist":
+				sendMessage(`View the list of every game Dan has beaten here: ${gamesLink}`);
+				break;
     		case "!so":
     			if (!hasThePower(msg.userInfo)) {
     				break;
@@ -229,6 +248,26 @@ async function main() {
     			}
     			setDeaths(message_split[1]);
     			break;
+    		case "!charity":
+    		case "!bald":
+    		case "!donate":
+    			if (charityLink.length == 0) {
+    				break;
+    			}
+				sendMessage("Today's Charity Livestream is to benefit the St. Baldrick's Foundation for Children's Cancer Research. Dan will donate $5 for every subscription during this stream. Or, to donate directly to the campaign visit https://tiltify.com/@danleikr/danleikr-charity-livestream-to-conquer-kids-cancer");
+    			break;
+    		case "!donated":
+    			if (!hasThePower(msg.userInfo)) {
+    				break;
+    			}
+    			addDonation(message_split[1], false);
+    			break;
+    		case "!subbed":
+    			if (!hasThePower(msg.userInfo)) {
+    				break;
+    			}
+    			addDonation(message_split[1], true);
+    			break;
     	}	
 	});
 
@@ -242,37 +281,73 @@ async function main() {
 	}
 
 	const quarterHourMilliseconds = 900000;
-	var selfLastSent = true;
+	var selfLastSent = false;
 
 	// Encouraging viewers to follow
 	var reminders = [
 	    "If you're enjoying the stream, please consider following the channel and showing some support! <3",
 	    "Type '!commands' to see a list of the commands DanLeikrBot knows",
-	    "Don't forget to follow the channel if you're having fun :)",
+	    `Dan uploads all of his let's plays to his YouTube at ${youtubeLink} check it out!`,
+	    `Use the !gamesbeaten command to see the list of every game Dan has beaten`,
 	    `Follow Dan on Twitter (${twitterLink}) to be updated about streams and uploads PogChamp`,
+	    `Check out the BTTV emotes on the channel! ${bttvEmotes.join(" ")}`,
 	    "I've heard that following DanLeikr makes you at least marginally cooler Kappa",
 	    "Connect with Dan through his socials by using the !socials command SeemsGood"
 	];
-	var reminderCounter = 0;
-	var reminderDelay = 0;
+	var sentReminders = [];
+	var reminderDelay = quarterHourMilliseconds * .5;
+	var state = 'r';
 	setTimeout(() => setInterval(function() {
 	    if (selfLastSent) {
 	    	return;
+	    };
+	    var message = "Hello World!";
+	    if (state == 'r'){
+	    	reminder = getRandomInt(reminders.length);
+	    	message = reminders[reminder];
+	    	sentReminders.push(message);
+	    	reminders.splice(reminder, 1);
+	    	if (reminders.length == 0){
+	    		reminders = [...sentReminders];
+	    		sentReminders = [];
+	    	}
 	    }
-	    sendMessage(reminders[reminderCounter % reminders.length]);
+	    else if (state == 'p'){
+	    	message = "Vote for Dan's next let's play here! " + pollLink;
+	    }
+	    else if (state == 'c'){
+	    	message = "Today's stream is a charity stream! Donate here! " + charityLink;
+	    }
+	    
+	    sendMessage(message);
 	    selfLastSent = true;
-	    reminderCounter += 1;
-	}, quarterHourMilliseconds * 1.5), reminderDelay);
+	    progressState();
+	}, quarterHourMilliseconds), quarterHourMilliseconds * .5);
 
-	// Next game poll
-	var nextGameDelay = quarterHourMilliseconds * 1.25;
-	setTimeout(() => setInterval(function() {
-	    if (selfLastSent || pollLink.length == 0) {
-	    	return;
-	    }
-	    sendMessage("Which game should be Dan's next let's play? Vote now! " + pollLink);
-	    selfLastSent = true;
-	}, quarterHourMilliseconds * 2), nextGameDelay);
+	function progressState(){
+		if (state == 'r'){
+			if (pollLink.length > 0){
+				state = 'p';
+			}
+			else if (charityLink.length > 0){
+				state = 'c';
+			}
+			else{
+				state = 'r';
+			}
+		}
+		else if (state == 'p'){
+			if (charityLink.length > 0){
+				state = 'c';
+			}
+			else {
+				state = 'r';
+			}
+		}
+		else if (state == 'c'){
+			state = 'r';
+		}
+	}
 
 	async function changeCurrentGoal(goal) {
 		fs.writeFileSync('./Current Goal.txt', `Current Goal:\n${goal}`);
@@ -319,10 +394,28 @@ async function main() {
 
 	async function setDeaths(deaths) {
 		await fs.writeFileSync('./Deaths.txt', `Deaths: ${deaths}`);
-		//sendMessage("Death count updated RIP");
 		if (deaths == 69) {
 			sendMessage("Nice Kappa");
 		}
+	}
+
+	async function addDonation(amount, sub) {
+		var currentAmount = await fs.readFileSync('./Donations.txt', 'utf8');
+		var currentSubs = await fs.readFileSync('./Subs.txt', 'utf8');
+		try {
+			currentAmount = parseFloat(currentAmount.split(" ")[1].substring(1));
+			currentSubs = parseInt(currentSubs.split(" ")[1]);
+			if (sub) {
+				currentSubs += parseInt(amount);
+				await fs.writeFileSync('./Subs.txt', `Plus ${currentSubs} subs!`)
+			} else {
+				currentAmount += parseFloat(amount);
+				await fs.writeFileSync('./Donations.txt', `Amount: $${currentAmount.toFixed(2)}`)
+			}
+		} catch(err) {
+				sendMessage("Error " + err.message);
+		}
+		sendMessage(`So far we have donated $${currentAmount.toFixed(2)} plus ${currentSubs} subs each worth 5 dollars to St. Baldrick's Children's Cancer Research!`);
 	}
 }
 
