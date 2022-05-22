@@ -94,6 +94,10 @@ async function main() {
 			}
 		}
 
+		ws.onerror = (event) => {
+			console.error("An error occurred:");
+		}
+
 		ws.onclose = () => {
 			clearTimeout(pingTimeout);
 			console.info("Connection has been closed.");
@@ -109,10 +113,12 @@ async function main() {
 		"You Can Do It!": "youCanDoIt",
 		"BootyCheeks": "bootyCheeks",
 		"I'm in danger! :)": "imInDanger",
-		"Hydrate!": "hydrate"
+		"Hydrate!": "hydrate",
+		"Ah S***, Here We Go Again": "ahShit"
 	}
 
 	const numHydrateSoundEffects = 3;
+	const numVillagerSoundEffects = 15;
 
 	const listener = await pubSubClient.onRedemption(userId, message => {
 		sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
@@ -170,7 +176,7 @@ async function main() {
 		selfLastSent = false;
     	var message_split = message.match(/\S+/g);
     	var command = message_split[0].toLowerCase();
-    	switch (command) {
+		switch (command) {
     		case "!heh":
     			sendMessage("kek");
     			break;
@@ -223,7 +229,8 @@ async function main() {
     			if (!hasThePower(msg.userInfo)) {
     				break;
     			}
-    			sendMessage("This is DanLeikrBot, signing off!");
+				sendMessage("This is DanLeikrBot, signing off!");
+				// TODO: kill app.js process
     			process.exit();
     			break;
     		case "!goal":
@@ -279,7 +286,12 @@ async function main() {
     			}
     			addDonation(message_split[1], true);
     			break;
-    	}	
+		}
+		if (message.match(/Hrrrr/g)?.length > 0) {
+			for (let x = 0; x < message.match(/Hrrrr/g).length; x++) {
+				ws.send(JSON.stringify({ type: "alert", alertName: "villager" + (getRandomInt(numVillagerSoundEffects) + 1) }));
+			}
+		}	
 	});
 
 	function sendMessage(message) {

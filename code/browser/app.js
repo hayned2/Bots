@@ -102,6 +102,14 @@ process.stdin.on('data', (data) => {
             break;
         }
 
+        case "mixed": {
+            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[2] }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[2] }));
+            break;
+        }
+
         default:
             console.log(`'${data[1]}' not a valid command`)
     }

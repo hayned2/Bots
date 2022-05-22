@@ -33,7 +33,9 @@ class Alert {
         this.#htmlElement.addEventListener("ended", () => {
             parentElement.className = this.#alertInfo.css[1];
             if (this.#alertType === "audio") {
-                setTimeout(playNext, 500, true);
+                if (this.#alertInfo.queued) setTimeout(playNext, 500, true);    // plays next in queue
+                // else setTimeout(this.#htmlElement.remove, 500);  // removes itself 
+                this.#htmlElement.remove();
             }
             else {
                 parentElement.addEventListener("animationend", () => {

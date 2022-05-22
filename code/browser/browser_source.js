@@ -41,8 +41,16 @@ function connectToWSS() {
 
             case 'alert': {
                 if (ALERTS[data.alertName] === undefined) return;
-                queue.push(new Alert(data.alertName));
-                playNext();
+
+                let alert = new Alert(data.alertName);
+                // adds to queue
+                if (ALERTS[data.alertName].queued) {
+                    queue.push(alert);
+                    playNext();
+                }
+                // plays immediately
+                else playNow(alert);
+
                 break;
             }
 
@@ -73,4 +81,16 @@ function playNext(donePlaying = false) {
 
     isPlaying = true;
     currentlyLoaded.play();
+}
+
+function playNow(alert) {
+    setTimeout(play, randomDelay(), alert);
+
+    function play(alert) {
+        alert.play();
+    }
+}
+
+function randomDelay() {
+    return Math.floor(Math.random() * 2000); // delay between 0 - 1 sec
 }
