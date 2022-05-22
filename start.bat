@@ -1,2 +1,2 @@
-start cmd /k node app.js
-node index.js
+start cmd /k node ./code/browser/app.js
+node ./code/bot/index.js
