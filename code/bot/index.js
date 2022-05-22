@@ -105,12 +105,23 @@ async function main() {
 
 	const browserRedemptions = {
 		"Hello There": "helloThere",
+		"Show Me What You Got": "showMeWhatYouGot",
+		"You Can Do It!": "youCanDoIt",
+		"BootyCheeks": "bootyCheeks",
+		"I'm in danger! :)": "imInDanger",
+		"Hydrate!": "hydrate"
 	}
+
+	const numHydrateSoundEffects = 3;
 
 	const listener = await pubSubClient.onRedemption(userId, message => {
 		sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
 		if (browserRedemptions.hasOwnProperty(message.rewardName)) {
-				ws.send(JSON.stringify({type: "alert", alertName: browserRedemptions[message.rewardName]}));
+			let alertName = browserRedemptions[message.rewardName];
+			if (message.rewardName == "Hydrate!") {
+				alertName += getRandomInt(numHydrateSoundEffects) + 1;
+			}	
+			ws.send(JSON.stringify({type: "alert", alertName: alertName}));
 		}
 	});
 

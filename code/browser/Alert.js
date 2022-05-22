@@ -23,21 +23,31 @@ class Alert {
             parentElement.classList.remove("hidden");
         });
 
-        parentElement.addEventListener("animationend", () => {  // will be ignored for audio alerts
-            parentElement.className = "";
-            this.#htmlElement.play();
-        }, { once: true });
+        if (this.#alertType === "video") {
+            parentElement.addEventListener("animationend", () => {  // will be ignored for audio alerts
+                parentElement.className = "";
+                this.#htmlElement.play();
+            }, { once: true });
+        }
 
         this.#htmlElement.addEventListener("ended", () => {
             parentElement.className = this.#alertInfo.css[1];
-            parentElement.addEventListener("animationend", () => {
-                parentElement.className = "hidden";
-                setTimeout(playNext, 500, true); // timeout of 500 ms to make sure alert is hidden/done
-            }, { once: true });
+            if (this.#alertType === "audio") {
+                setTimeout(playNext, 500, true);
+            }
+            else {
+                parentElement.addEventListener("animationend", () => {
+                    parentElement.className = "hidden";
+                    setTimeout(playNext, 500, true); // timeout of 500 ms to make sure alert is hidden/done
+                }, { once: true });
+            }
         }, { once: true });
 
         this.#htmlElement.load(); // loads metadata & data
         parentElement.appendChild(this.#htmlElement); // add to dom
+        if (this.#alertType === "audio") {
+            this.#htmlElement.play();
+        }
     }
 
     /**

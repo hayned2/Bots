@@ -19,7 +19,7 @@ let ALERTS = {
         type: "audio/mp3",
         css: ["", ""]
     },
-    cromulan: {
+    showMeWhatYouGot: {
         src: "../../media/audio/show-me-what-you-got.mp3",
         type: "audio/mp3",
         css: ["", ""]
@@ -36,6 +36,21 @@ let ALERTS = {
     },
     youCanDoIt: {
         src: "../../media/audio/you-can-do-it.mp3",
+        type: "audio/mp3",
+        css: ["", ""]
+    },
+    hydrate1: {
+        src: "../../media/audio/estus-flask.mp3",
+        type: "audio/mp3",
+        css: ["", ""]
+    },
+    hydrate2: {
+        src: "../../media/audio/let-me-get-some-sip.mp3",
+        type: "audio/mp3",
+        css: ["", ""]
+    },
+    hydrate3: {
+        src: "../../media/audio/minecraft-potion-drinking.mp3",
         type: "audio/mp3",
         css: ["", ""]
     }
