@@ -42,13 +42,14 @@ function connectToWSS() {
             case 'alert': {
                 if (ALERTS[data.alertName] === undefined) return;
 
-                let alert = new Alert(data.alertName);
-                // adds to queue
+                let alert = new Alert(data);
+
+                // adds to queue if this is an alert that should be queued
                 if (ALERTS[data.alertName].queued) {
                     queue.push(alert);
                     playNext();
                 }
-                // plays immediately
+                // otherwise, plays immediately
                 else playNow(alert);
 
                 break;
@@ -91,6 +92,28 @@ function playNow(alert) {
     }
 }
 
+/**
+ * Generates random delay between 0 - 1 seconds.
+ * 
+ * @returns a random float between 0 and 1
+ */
 function randomDelay() {
-    return Math.floor(Math.random() * 2000); // delay between 0 - 1 sec
+    return Math.floor(Math.random() * 2000);
+}
+
+/**
+ * Finds the value associated with a specified key. Key must be given as a dot notation path.
+ * 
+ * EX: 
+ *      obj  = { alertname: "helloThere", details: { text: "this is an example" } }
+ *      path = "details.text"   -->     "this is an example"
+ *      path = "alertname"      -->     "helloThere"
+ *      path = "details"        -->     { text: "this is an example" }
+ * 
+ * @param {object} obj the object to search
+ * @param {string} path the dot notation path of the key to find
+ * @returns the value associated to the key
+ */
+function getKey(obj, path) {
+    return path.split('.').reduce((val, el) => val[el], obj);
 }

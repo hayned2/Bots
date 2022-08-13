@@ -1,10 +1,12 @@
 class Alert {
+    #data = {}
     #alertInfo = {}
     #alertType = ""
     #htmlElement = undefined;
 
-    constructor(alertName) {
-        this.#alertInfo = ALERTS[alertName];
+    constructor(data) {
+        this.#data = data;
+        this.#alertInfo = ALERTS[data.alertName];
         this.#alertType = this.#alertInfo.type.match(/video|audio/)[0];
     }
 
@@ -12,43 +14,76 @@ class Alert {
      * Creates a video or audio element and plays it.
      */
     play() {
-        this.#htmlElement = document.createElement(this.#alertType);
-        this.#htmlElement.src = this.#alertInfo.src;
-        this.#htmlElement.type = this.#alertInfo.type;
+        // create div that will hold everything
+        this.#htmlElement = document.createElement("div");
+        // only add ID's to alerts that can be queued
+        if (this.#alertInfo.queued) this.#htmlElement.id = this.#data.alertName;
 
-        let parentElement = document.getElementById(`${this.#alertType}-alert-container`);
-        parentElement.className = this.#alertInfo.css[0] + " hidden";
+        // create audio/video element
+        let alert = document.createElement(this.#alertType);
+        alert.src = this.#alertInfo.src;
+        alert.type = this.#alertInfo.type;
 
-        this.#htmlElement.addEventListener("loadedmetadata", () => {
-            parentElement.classList.remove("hidden");
+        // some alerts have additional html required. create any additional elements
+        let elems = [];
+        if (this.#alertInfo.img) {
+            let img = document.createElement("img");
+            img.src = this.#alertInfo.img;
+            img.alt = "";
+            elems.push(img);
+        }
+
+        if (this.#alertInfo.elems) {
+            // create each element
+            for (let [elemType, data] of Object.entries(this.#alertInfo.elems)) {
+                let elem = document.createElement(elemType);
+                // set the element attributes
+                for (let [attr, path] of Object.entries(data)) {
+                    elem[attr] = getKey(this.#data, path);
+                }
+                elems.push(elem);
+            }
+        }
+
+        // set starting css and hide the element
+        this.#htmlElement.className = this.#alertInfo.css[0] + " hidden";
+
+        // add listeners for loading metadata, when starting animation ends (for videos), & when audio/video ends
+        alert.addEventListener("loadedmetadata", () => {
+            this.#htmlElement.classList.remove("hidden");
         });
 
         if (this.#alertType === "video") {
-            parentElement.addEventListener("animationend", () => {  // will be ignored for audio alerts
-                parentElement.className = "";
-                this.#htmlElement.play();
+            this.#htmlElement.addEventListener("animationend", () => {
+                this.#htmlElement.className = "";
+                alert.play();
             }, { once: true });
         }
 
-        this.#htmlElement.addEventListener("ended", () => {
-            parentElement.className = this.#alertInfo.css[1];
-            if (this.#alertType === "audio") {
+        alert.addEventListener("ended", () => {
+            this.#htmlElement.className = this.#alertInfo.css[1];
+            if (this.#alertType === "audio" && !this.#alertInfo.img) {
                 if (this.#alertInfo.queued) setTimeout(playNext, 500, true);    // plays next in queue
-                // else setTimeout(this.#htmlElement.remove, 500);  // removes itself 
                 this.#htmlElement.remove();
             }
+            // all video alerts and some audio alerts have ending animations
             else {
-                parentElement.addEventListener("animationend", () => {
-                    parentElement.className = "hidden";
+                this.#htmlElement.addEventListener("animationend", () => {
+                    this.#htmlElement.className = "hidden";
                     setTimeout(playNext, 500, true); // timeout of 500 ms to make sure alert is hidden/done
                 }, { once: true });
             }
         }, { once: true });
 
-        this.#htmlElement.load(); // loads metadata & data
-        parentElement.appendChild(this.#htmlElement); // add to dom
+        alert.load(); // loads metadata & data
+
+        // add all elements to div
+        this.#htmlElement.appendChild(alert);
+        if (elems.length) this.#htmlElement.append(...elems);
+
+        document.getElementById(`${this.#alertType}-alert-container`).appendChild(this.#htmlElement); // add to dom
         if (this.#alertType === "audio") {
-            this.#htmlElement.play();
+            alert.play();
         }
     }
 

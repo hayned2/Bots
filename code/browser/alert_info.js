@@ -154,5 +154,18 @@ let ALERTS = {
         type: "audio/ogg",
         queued: false,
         css: ["", ""]
+    },
+    citation: {
+        src: "../../media/audio/printer.wav",
+        type: "audio/wav",
+        queued: true,
+        css: ["print-citation", "citation-done"],
+
+        img: "../../media/image/Citation.png",
+        elems: {
+            p: {
+                textContent: "details.text"
+            }
+        }
     }
 }

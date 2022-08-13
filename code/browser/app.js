@@ -87,26 +87,30 @@ wss.on("close", () => {
 // console so that I can send test alerts
 process.stdin.on('data', (data) => {
     data = data.toString().trim().split(' ');
+    let dummyDetails = { text: "ha ha, what a dummy moment. lmao. gg" };
 
     switch (data[0]) {
 
         case "single": {
-            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
+            let details = (data[2] && data[2] == "details") ? dummyDetails : {};
+            client.send(JSON.stringify({ type: "alert", alertName: data[1], details }));
             break;
         }
 
         case "multi": {
-            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
-            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
-            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
+            let details = (data[2] && data[2] == "details") ? dummyDetails : {};
+            client.send(JSON.stringify({ type: "alert", alertName: data[1], details }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[1], details }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[1], details }));
             break;
         }
 
         case "mixed": {
-            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
-            client.send(JSON.stringify({ type: "alert", alertName: data[2] }));
-            client.send(JSON.stringify({ type: "alert", alertName: data[1] }));
-            client.send(JSON.stringify({ type: "alert", alertName: data[2] }));
+            let details = (data[2] && data[2] == "details") ? dummyDetails : {};
+            client.send(JSON.stringify({ type: "alert", alertName: data[1], details }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[2], details }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[1], details }));
+            client.send(JSON.stringify({ type: "alert", alertName: data[2], details }));
             break;
         }
 

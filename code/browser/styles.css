@@ -1,37 +1,128 @@
+@font-face {
+    font-family: 'BM Mini';
+    src: url(../../media/misc/BMmini.TTF);
+}
+
+@keyframes vertical-reveal {
+    0% {
+        bottom: -450px;
+    }
+    100% {
+        bottom: 0;
+    }
+}
+
+@keyframes printer {
+    /* step 1: starting position */
+    0% {
+        bottom: -164px;
+    }
+
+    /* step 2: first print */
+    24% {
+        bottom: -109px;
+    }
+
+    /* step 3: pause after first print */
+    32% {
+        bottom: -109px;
+    }
+
+    /* step 4: second print */
+    56% {
+        bottom: -54px;
+    }
+
+    /* step 5: pause after second print */
+    64% {
+        bottom: -54px;
+    }
+
+    /* step 6: third print */
+    88% {
+        bottom: 0px;
+    }
+
+    /* step 7: pause after third print */
+    94% {
+        bottom: 0px;
+    }
+
+    /* step 8: yank (tear) */
+    100% {
+        bottom: 45px;
+    }
+}
+
+@keyframes hold-and-fade-out {
+    0% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
 body {
     overflow: hidden;
     margin: 0;
-}
-
-#page-container {
-    height: 100vh;
-}
-
-#video-alert-container {
-    position: absolute;
-    top: 70%;
-    height: 10%;
 }
 
 .hidden {
     display: none;
 }
 
+#page-container {
+    height: 100vh;
+    width: 100vw;
+}
+
+#helloThere {
+    position: absolute;
+    bottom: 0;
+}
+
 .show-alert-vertical {
-    top: 70%;
     animation: vertical-reveal 1s linear normal;
 }
 
 .hide-alert-vertical {
-    top: 70%;
     animation: vertical-reveal 1s linear reverse;
 }
 
-@keyframes vertical-reveal {
-    0% {
-        top: 100%
-    }
-    100% {
-        top: 70%;
-    }
+#citation {
+    position: absolute;
+    bottom: 40px;
+    left: calc(50% - 183px);
+}
+
+#citation p {
+    font-family: 'BM Mini';
+    font-size: 17px;
+    line-height: 1.25rem;
+    color: #6e6e6e;
+
+    position: absolute;
+    top: 28px;
+    left: 21px;
+
+    width: 324px;
+    max-height: 60px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.citation-done {
+    bottom: 40px;
+    animation: hold-and-fade-out 5s linear normal;
+}
+
+.print-citation {
+    animation: printer 2.441s linear normal;
 }
