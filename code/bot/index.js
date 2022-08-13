@@ -114,7 +114,8 @@ async function main() {
 		"BootyCheeks": "bootyCheeks",
 		"I'm in danger! :)": "imInDanger",
 		"Hydrate!": "hydrate",
-		"Ah S***, Here We Go Again": "ahShit"
+		"Ah S***, Here We Go Again": "ahShit",
+		"Citation": "citation"
 	}
 
 	const numHydrateSoundEffects = 3;
@@ -124,10 +125,14 @@ async function main() {
 		sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
 		if (browserRedemptions.hasOwnProperty(message.rewardName)) {
 			let alertName = browserRedemptions[message.rewardName];
+			let details = {};
 			if (message.rewardName == "Hydrate!") {
 				alertName += getRandomInt(numHydrateSoundEffects) + 1;
-			}	
-			ws.send(JSON.stringify({type: "alert", alertName: alertName}));
+			}
+			if (message.message) {
+				details['text'] = message.message;
+			}
+			ws.send(JSON.stringify({type: "alert", alertName: alertName, details: details}));
 		}
 	});
 
@@ -162,7 +167,7 @@ async function main() {
 		"modCheck"
 	]
 
-	const pollLink = "https://forms.gle/D3yYWGNMedhwcHL5A";
+	const pollLink = "https://forms.gle/4QkJg2S9cozY3YH47";
 	const twitterLink = "https://twitter.com/DanLeikr";
 	const instaLink = "https://www.instagram.com/danleikr";
 	const youtubeLink = "https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g";
@@ -287,8 +292,9 @@ async function main() {
     			addDonation(message_split[1], true);
     			break;
 		}
-		if (message.match(/Hrrrr/g)?.length > 0) {
-			for (let x = 0; x < message.match(/Hrrrr/g).length; x++) {
+		let Hrrrrs = message.match(/Hrrrr/g);
+		if (Hrrrrs && Hrrrrs.length > 0) {
+			for (let x = 0; x < Hrrrrs.length; x++) {
 				ws.send(JSON.stringify({ type: "alert", alertName: "villager" + (getRandomInt(numVillagerSoundEffects) + 1) }));
 			}
 		}	
