@@ -8,6 +8,8 @@ async function main() {
 	const channelName = "#danleikr"
 	const clientInfo = JSON.parse(await fs.readFileSync('./clientInfo.json'));
 	const tokenData = JSON.parse(await fs.readFileSync('./tokens.json'));
+
+	// Connect to chat as DanLeikrBot
 	const authProviderChat = new RefreshableAuthProvider(
 		new StaticAuthProvider(clientInfo.clientId, tokenData.accessToken),
 		{
@@ -25,6 +27,7 @@ async function main() {
 		}
 	);
 
+	// Connect to DanLeikr's channel to read redemptions
 	const dlTokenData = JSON.parse(await fs.readFileSync('./dltokens.json'));
 	const authProvider = new RefreshableAuthProvider(
 		new StaticAuthProvider(clientInfo.clientId, dlTokenData.accessToken),
@@ -43,16 +46,18 @@ async function main() {
 		}
 	);
 
+	// Connect to chat and send a message
 	const chatClient = new ChatClient(authProviderChat, { channels: ['danleikr'] });
 	chatClient.onMessageFailed((channel, reason) => console.log(`Message '${message}' failed to send. Reason: '${reason}'`));
-
 	await chatClient.connect();
 	setTimeout(() => sendMessage("Hello World, DanLeikrBot is online!"), 3000);
 
+	// Connect to redemptions through pubsub
 	const apiClient = new ApiClient({ authProvider });
 	const pubSubClient = new PubSubClient();
 	const userId = await pubSubClient.registerUserListener(apiClient);
 
+	// Connect to the browser through websockets
 	const WebSocket = require('ws');
 	let ws = undefined;
 	const heartbeat_msg = { type: "heartbeat" };
@@ -161,13 +166,12 @@ async function main() {
 		"RIP",
 		"showMe",
 		"hollowParty",
-		"foxaPatPat",
 		"celesteSquish",
 		"Suavemente",
 		"modCheck"
 	]
 
-	const pollLink = "https://forms.gle/4QkJg2S9cozY3YH47";
+	const pollLink = "";
 	const twitterLink = "https://twitter.com/DanLeikr";
 	const instaLink = "https://www.instagram.com/danleikr";
 	const youtubeLink = "https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g";
@@ -175,9 +179,15 @@ async function main() {
 	const charityLink = "";
 	const gamesLink = "https://docs.google.com/spreadsheets/d/1TAXZvduWWV_pzQrLfpN7plf26v4TsX7QvSXQflySark/edit?usp=sharing";
 	var deaths = -1;
+	var usersSeenToday = new Set();
 
 	chatClient.onMessage((channel, user, message, msg) => {
-		console.log(user + ": " + message);
+		console.log(msg.userInfo.displayName + ": " + message);
+		if (!usersSeenToday.has(user)) {
+			sendMessage("Hello there, " + msg.userInfo.displayName + ".");
+			usersSeenToday.add(user);
+			ws.send(JSON.stringify({ type: "alert", alertName: "notify", user: user }));
+		}
 		selfLastSent = false;
     	var message_split = message.match(/\S+/g);
     	var command = message_split[0].toLowerCase();
@@ -209,6 +219,7 @@ async function main() {
     			sendMessage("Thanks for the lurk " + user + "! <3");
     			break;
     		case "!poll":
+    		case "!vote":
     			if (pollLink.length > 0) {
     				sendMessage("Vote on the next game Dan does a let's play of here: " + pollLink);
     			} else {
@@ -221,6 +232,9 @@ async function main() {
 			case "!gamesbeaten":
 			case "!gameslist":
 				sendMessage(`View the list of every game Dan has beaten here: ${gamesLink}`);
+				break;
+			case "!tierlist":
+				sendMessage(`Dan is building up his tierlist here: ${gamesLink}`);
 				break;
     		case "!so":
     			if (!hasThePower(msg.userInfo)) {
@@ -237,7 +251,6 @@ async function main() {
 				sendMessage("This is DanLeikrBot, signing off!");
 				// TODO: kill app.js process
     			process.exit();
-    			break;
     		case "!goal":
     			if (!hasThePower(msg.userInfo)) {
     				break;
@@ -297,7 +310,7 @@ async function main() {
 			for (let x = 0; x < Hrrrrs.length; x++) {
 				ws.send(JSON.stringify({ type: "alert", alertName: "villager" + (getRandomInt(numVillagerSoundEffects) + 1) }));
 			}
-		}	
+		}
 	});
 
 	function sendMessage(message) {
@@ -318,10 +331,11 @@ async function main() {
 	    "Type '!commands' to see a list of the commands DanLeikrBot knows",
 	    `Dan uploads all of his let's plays to his YouTube at ${youtubeLink} check it out!`,
 	    `Use the !gamesbeaten command to see the list of every game Dan has beaten`,
-	    `Follow Dan on Twitter (${twitterLink}) to be updated about streams and uploads PogChamp`,
-	    `Check out the BTTV emotes on the channel! ${bttvEmotes.join(" ")}`,
 	    "I've heard that following DanLeikr makes you at least marginally cooler Kappa",
-	    "Connect with Dan through his socials by using the !socials command SeemsGood"
+		"If you see something funny or awesome, clipping it would be fantastic, thank you!",
+		"Use the !quotes command if you want to see how dumb Dan can be sometimes",
+		"Want your own entrance sound effect? Check out the channel point redemption for it!",
+		"Dan has started a tier list for all of his games (!gamesbeaten). If he hasn't rated a game yet, you can use a channel point redemption to make him rate it!"
 	];
 	var sentReminders = [];
 	var reminderDelay = quarterHourMilliseconds * .5;
@@ -388,7 +402,7 @@ async function main() {
 	}
 
 	async function getQuote(quoteNumber) {
-		var quotes = await fs.readFileSync('./Quotes.txt', "utf8").split(/\r?\n/);
+		var quotes = await fs.readFileSync('./code/bot/Quotes.txt', "utf8").split(/\r?\n/);
 		if (quoteNumber == null) {
 			quoteNumber = getRandomInt(quotes.length);
 		} 
@@ -407,12 +421,12 @@ async function main() {
 			sendMessage("Silence is golden, but make sure you include a quote to be added next time ;)");
 			return;
 		}
-		await fs.appendFileSync('./Quotes.txt', '\n' + quote);
+		await fs.appendFileSync('./code/bot/Quotes.txt', '\n' + quote);
 		getQuote("last");
 	}
 
 	async function addDeath() {
-		var deaths = await fs.readFileSync('./Deaths.txt', 'utf8');
+		var deaths = await fs.readFileSync('./code/bot/Deaths.txt', 'utf8');
 		try {
 			deaths = parseInt(deaths.split(" ")[1]) + 1;
 		} catch {
@@ -422,7 +436,7 @@ async function main() {
 	}
 
 	async function setDeaths(deaths) {
-		await fs.writeFileSync('./Deaths.txt', `Deaths: ${deaths}`);
+		await fs.writeFileSync('./code/bot/Deaths.txt', `Deaths: ${deaths}`);
 		if (deaths == 69) {
 			sendMessage("Nice Kappa");
 		}

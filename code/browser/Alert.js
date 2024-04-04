@@ -3,11 +3,13 @@ class Alert {
     #alertInfo = {}
     #alertType = ""
     #htmlElement = undefined;
+    #user = ""
 
     constructor(data) {
         this.#data = data;
         this.#alertInfo = ALERTS[data.alertName];
         this.#alertType = this.#alertInfo.type.match(/video|audio/)[0];
+        this.#user = data.user;
     }
 
     /**
@@ -21,7 +23,21 @@ class Alert {
 
         // create audio/video element
         let alert = document.createElement(this.#alertType);
-        alert.src = this.#alertInfo.src;
+
+        console.log(this.#user, this.#alertInfo);
+
+        if (this.#data.alertName == "notify") {
+            switch(this.#user) {
+                case "stomata_":
+                    alert.src = this.#alertInfo.srcAlaina;
+                    break;
+                default:
+                    alert.src = this.#alertInfo.src;
+                    break;
+            }
+        } else {
+            alert.src = this.#alertInfo.src;
+        }
         alert.type = this.#alertInfo.type;
 
         // some alerts have additional html required. create any additional elements

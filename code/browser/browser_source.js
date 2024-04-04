@@ -6,7 +6,6 @@ let isPlaying = false;
 let queue = [];
 let currentlyLoaded = undefined;
 
-
 function heartbeat() {
     clearTimeout(window.pingTimeout);
     ws.send(JSON.stringify(heartbeat_msg));

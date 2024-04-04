@@ -167,5 +167,18 @@ let ALERTS = {
                 textContent: "details.text"
             }
         }
+    },
+    notify: {
+        src: "../../media/audio/imrcv.wav",
+        srcAlaina: "../../media/audio/thats-a-ten.mp3",
+        type: "audio/wav",
+        queued: false,
+        css: ["", ""]
+    },
+    notifyShrek: {
+        src: "../../media/audio/somebody.mp3",
+        type: "audio/mp3",
+        queued: false,
+        css: ["", ""]
     }
 }
