@@ -168,9 +168,30 @@ let ALERTS = {
             }
         }
     },
+    toasty: {
+        src: "../../media/audio/toasty.wav",
+        type: "audio/wav",
+        queued: false,
+        css: ["", ""],
+        img: ""
+    },
+    crispy: {
+        src: "../../media/audio/crispy.mp3",
+        type: "audio/mp3",
+        queued: false,
+        css: ["", ""],
+        img: ""
+    },
+    frosty: {
+        src: "../../media/audio/frosty.mp3",
+        type: "audio/mp3",
+        queued: false,
+        css: ["", ""],
+        img: ""
+    },
     notify: {
         src: "../../media/audio/imrcv.wav",
-        srcAlaina: "../../media/audio/thats-a-ten.mp3",
+        src_stomata_: "../../media/audio/thats-a-ten.mp3",
         type: "audio/wav",
         queued: false,
         css: ["", ""]

@@ -24,17 +24,8 @@ class Alert {
         // create audio/video element
         let alert = document.createElement(this.#alertType);
 
-        console.log(this.#user, this.#alertInfo);
-
         if (this.#data.alertName == "notify") {
-            switch(this.#user) {
-                case "stomata_":
-                    alert.src = this.#alertInfo.srcAlaina;
-                    break;
-                default:
-                    alert.src = this.#alertInfo.src;
-                    break;
-            }
+            alert.src = this.#alertInfo[`src_${this.#user}`] ?? this.#alertInfo.src;
         } else {
             alert.src = this.#alertInfo.src;
         }
