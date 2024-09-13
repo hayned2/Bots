@@ -189,6 +189,12 @@ let ALERTS = {
         css: ["", ""],
         img: ""
     },
+    hillTaken: {
+        src: "../../media/audio/hill-taken.mp3",
+        type: "audio/mp3",
+        queued: true,
+        css: ["", ""]
+    },
     notify: {
         src: "../../media/audio/imrcv.wav",
         src_stomata_: "../../media/audio/thats-a-ten.mp3",

@@ -2,63 +2,76 @@ const { RefreshableAuthProvider, StaticAuthProvider } = require('twitch-auth');
 const { ChatClient } = require('twitch-chat-client');
 const fs = require('fs');
 const { ApiClient } = require('twitch');
-const { PubSubClient, PubSubRedemptionMessage } = require('twitch-pubsub-client');
+const { PubSubClient } = require('twitch-pubsub-client');
+const WebSocket = require('ws');
+const { start } = require('repl');
 
 async function main() {
-	const channelName = "#danleikr"
-	const clientInfo = JSON.parse(await fs.readFileSync('./clientInfo.json'));
-	const tokenData = JSON.parse(await fs.readFileSync('./tokens.json'));
 
-	// Connect to chat as DanLeikrBot
-	const authProviderChat = new RefreshableAuthProvider(
-		new StaticAuthProvider(clientInfo.clientId, tokenData.accessToken),
+	// -- AUTHORIZATION + CONNECTION --
+
+	const channelName = "#dan_thegamerman"
+	const persistentData = JSON.parse(fs.readFileSync('./persistent_data.json'));
+
+	function updatePersistentData() {
+		fs.writeFileSync('./persistent_data.json', JSON.stringify(persistentData, null, 4), 'UTF-8');
+	};
+
+	// BotTheGamerBot connection
+	const chatBotAuthProvider = new RefreshableAuthProvider(
+		new StaticAuthProvider(persistentData.clientInfo.clientId, persistentData.botAccessToken.accessToken),
 		{
-			clientSecret: clientInfo.clientSecret,
-			refreshToken: tokenData.refreshToken,
-			expiry: tokenData.expiryTimestamp === null ? null : new Date(tokenData.expiryTimestamp),
+			clientSecret: persistentData.clientInfo.clientSecret,
+			refreshToken: persistentData.botAccessToken.refreshToken,
+			expiry: persistentData.botAccessToken.expiryTimestamp === null ? null : new Date(persistentData.botAccessToken.expiryTimestamp),
 			onRefresh: async ({ accessToken, refreshToken, expiryDate }) => {
-				const newTokenData = {
+				persistentData.botAccessToken = {
 					accessToken,
 					refreshToken,
 					expiryTimestamp: expiryDate === null ? null : expiryDate.getTime() 
 				};
-				await fs.writeFileSync('./tokens.json', JSON.stringify(newTokenData, null, 4), 'UTF-8');
+				updatePersistentData();
 			}
 		}
 	);
 
-	// Connect to DanLeikr's channel to read redemptions
-	const dlTokenData = JSON.parse(await fs.readFileSync('./dltokens.json'));
-	const authProvider = new RefreshableAuthProvider(
-		new StaticAuthProvider(clientInfo.clientId, dlTokenData.accessToken),
+	// PubSub connection
+	const pubSubAuthProvider = new RefreshableAuthProvider(
+		new StaticAuthProvider(persistentData.clientInfo.clientId, persistentData.pubSubAccessToken.accessToken),
 		{
-			clientSecret: clientInfo.clientSecret,
-			refreshToken:dlTokenData.refreshToken,
-			expiry: dlTokenData.expiryTimestamp === null ? null : new Date(dlTokenData.expiryTimestamp),
+			clientSecret: persistentData.clientInfo.clientSecret,
+			refreshToken:persistentData.pubSubAccessToken.refreshToken,
+			expiry: persistentData.pubSubAccessToken.expiryTimestamp === null ? null : new Date(persistentData.pubSubAccessToken.expiryTimestamp),
 			onRefresh: async ({ accessToken, refreshToken, expiryDate }) => {
-				const newTokenData = {
+				persistentData.pubSubAccessToken = {
 					accessToken,
 					refreshToken,
 					expiryTimestamp: expiryDate === null ? null : expiryDate.getTime() 
 				};
-				await fs.writeFileSync('./dltokens.json', JSON.stringify(newTokenData, null, 4), 'UTF-8');
+				updatePersistentData();
 			}
 		}
 	);
 
 	// Connect to chat and send a message
-	const chatClient = new ChatClient(authProviderChat, { channels: ['danleikr'] });
-	chatClient.onMessageFailed((channel, reason) => console.log(`Message '${message}' failed to send. Reason: '${reason}'`));
+	const chatClient = new ChatClient(chatBotAuthProvider, { channels: ['dan_thegamerman'] });
+	chatClient.onMessageFailed((_, reason) => console.log(`Message '${message}' failed to send. Reason: '${reason}'`));
 	await chatClient.connect();
-	setTimeout(() => sendMessage("Hello World, DanLeikrBot is online!"), 3000);
+	setTimeout(() => startup(), 3000);
+
+	async function startup() {
+		sendMessage("Hello World, Bot_TheGamerBot is online!");
+		startKingOfTheHill();
+	}
 
 	// Connect to redemptions through pubsub
-	const apiClient = new ApiClient({ authProvider });
+	const apiClient = new ApiClient({ authProvider: pubSubAuthProvider });
 	const pubSubClient = new PubSubClient();
 	const userId = await pubSubClient.registerUserListener(apiClient);
 
+	// -- BROWSER SOURCE SET-UP --
+
 	// Connect to the browser through websockets
-	const WebSocket = require('ws');
 	let ws = undefined;
 	const heartbeat_msg = { type: "heartbeat" };
 	const url = "ws://127.0.0.1:8080/";
@@ -99,8 +112,8 @@ async function main() {
 			}
 		}
 
-		ws.onerror = (event) => {
-			console.error("An error occurred:");
+		ws.onerror = (error) => {
+			console.error("An error occurred:", error);
 		}
 
 		ws.onclose = () => {
@@ -112,6 +125,8 @@ async function main() {
 
 	connectToWSS();
 
+	// -- CHANNEL POINT REDEMPTION HANDLING --
+
 	const browserRedemptions = {
 		"Hello There": "helloThere",
 		"Show Me What You Got": "showMeWhatYouGot",
@@ -120,14 +135,24 @@ async function main() {
 		"I'm in danger! :)": "imInDanger",
 		"Hydrate!": "hydrate",
 		"Ah S***, Here We Go Again": "ahShit",
-		"Citation": "citation"
+		"Citation": "citation",
+		"King of the Hill": "hillTaken"
 	}
 
 	const numHydrateSoundEffects = 3;
 	const numVillagerSoundEffects = 15;
 
-	const listener = await pubSubClient.onRedemption(userId, message => {
-		sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
+	const _ = await pubSubClient.onRedemption(userId, message => {
+		if (message.rewardName === "King of the Hill") {
+			updateKingOfTheHill(message.userDisplayName);
+			sendMessage(`${message.userDisplayName} has taken the hill.`);
+		}
+		else {
+			sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
+		}
+		if (!usersSeenToday.has(message.userName)) {
+			userHasAppeared(message.userName, message.userDisplayName);
+		}
 		if (browserRedemptions.hasOwnProperty(message.rewardName)) {
 			let alertName = browserRedemptions[message.rewardName];
 			let details = {};
@@ -141,6 +166,7 @@ async function main() {
 		}
 	});
 
+	// -- CHAT MESSAGE HANDLING --
 
 	const publicCommands = [
 		"!commands",
@@ -150,10 +176,10 @@ async function main() {
 		"!youtube",
 		"!discord",
 		"!lurk",
-		"!poll",
 		"!quote (number)",
 		"!bttv",
-		"!gamesbeaten"
+		"!gamesbeaten",
+		"!attendance"
 	];
 
 	const bttvEmotes = [
@@ -171,22 +197,45 @@ async function main() {
 		"modCheck"
 	]
 
-	const pollLink = "";
-	const twitterLink = "https://twitter.com/DanLeikr";
+	const twitterLink = "https://x.com/Dan_TheGamerMan";
 	const instaLink = "https://www.instagram.com/danleikr";
 	const youtubeLink = "https://www.youtube.com/channel/UCg6Fh7wpNNOX_k7tvNCVW2g";
 	const discordName = "DanLeikr#7353";
-	const charityLink = "";
 	const gamesLink = "https://docs.google.com/spreadsheets/d/1TAXZvduWWV_pzQrLfpN7plf26v4TsX7QvSXQflySark/edit?usp=sharing";
-	var deaths = -1;
 	var usersSeenToday = new Set();
 
-	chatClient.onMessage((channel, user, message, msg) => {
+	async function logUserAppearance(user) {
+		appearances = persistentData.userAppearances[user];
+		if (appearances === undefined) {
+			persistentData.userAppearances[user] = 1;
+		} else {
+			persistentData.userAppearances[user] += 1;
+		}
+		updatePersistentData();
+	}
+
+	function userHasAppeared(username, userDisplayName) {
+		logUserAppearance(username);
+		sendMessage("Hello there, " + userDisplayName + ".");
+		usersSeenToday.add(username);
+		ws.send(JSON.stringify({ type: "alert", alertName: "notify", user: username }));
+	}
+
+	function sendMessage(message) {
+		chatClient.say(channelName, message);
+		console.log(`Bot_TheGamerBot: ` + message);
+	}
+
+	function hasThePower(userInfo) {
+		return userInfo.isMod || userInfo.isBroadcaster;
+	}
+
+	var selfLastSent = false;
+
+	chatClient.onMessage(async (_, user, message, msg) => {
 		console.log(msg.userInfo.displayName + ": " + message);
 		if (!usersSeenToday.has(user)) {
-			sendMessage("Hello there, " + msg.userInfo.displayName + ".");
-			usersSeenToday.add(user);
-			ws.send(JSON.stringify({ type: "alert", alertName: "notify", user: user }));
+			userHasAppeared(user, msg.userInfo.displayName);
 		}
 		selfLastSent = false;
     	var message_split = message.match(/\S+/g);
@@ -199,32 +248,24 @@ async function main() {
     			sendMessage(`List of available commands: ${publicCommands.join(", ")}`);
     			break;
     		case "!socials":
-    			sendMessage(`DanLeikr's Socials \nTwitter: ${twitterLink} \nYouTube: ${youtubeLink} \nInstagram: ${instaLink} \nDiscord: ${discordName}`);
+    			sendMessage(`Dan's Socials \nTwitter: ${twitterLink} \nYouTube: ${youtubeLink} \nInstagram: ${instaLink} \nDiscord: ${discordName}`);
     			break;
     		case "!twitter":
     		case "!twatter":
-    			sendMessage(`Check out DanLeikr's Twitter here: ${twitterLink}`);
+    			sendMessage(`Check out Dan's Twitter here: ${twitterLink}`);
     			break;
     		case "!insta":
     		case "!instagram":
-    			sendMessage(`Check out DanLeikr's Instagram here: ${instaLink}`);
+    			sendMessage(`Check out Dan's Instagram here: ${instaLink}`);
     			break;
     		case "!youtube":
-    			sendMessage(`Check out DanLeikr's YouTube here: ${youtubeLink}`);
+    			sendMessage(`Check out Dan's YouTube here: ${youtubeLink}`);
     			break;
     		case "!discord":
-    			sendMessage(`DanLeikr's Discord name is ${discordName}`);
+    			sendMessage(`Dan's Discord name is ${discordName}`);
     			break;
     		case "!lurk":
     			sendMessage("Thanks for the lurk " + user + "! <3");
-    			break;
-    		case "!poll":
-    		case "!vote":
-    			if (pollLink.length > 0) {
-    				sendMessage("Vote on the next game Dan does a let's play of here: " + pollLink);
-    			} else {
-    				sendMessage("Dan isn't running a poll for his next game yet, but he will when he starts his next one!");
-    			}
     			break;
     		case "!bttv":
 				sendMessage(`${bttvEmotes.join(" ")}`);
@@ -248,15 +289,9 @@ async function main() {
     			if (!hasThePower(msg.userInfo)) {
     				break;
     			}
-				sendMessage("This is DanLeikrBot, signing off!");
+				sendMessage("This was Bot_TheGamerBot, signing off!");
 				// TODO: kill app.js process
     			process.exit();
-    		case "!goal":
-    			if (!hasThePower(msg.userInfo)) {
-    				break;
-    			}
-    			changeCurrentGoal(message_split.slice(1).join(" "));
-    			break;
     		case "!quote":
     		case "!quotes":
     			var quoteNumber = null;
@@ -272,38 +307,14 @@ async function main() {
     			}
     			setQuote(message_split.slice(1).join(" "));
     			break;
-    		case "!adddeath":
-    			if (!hasThePower(msg.userInfo)) {
-    				break;
-    			}
-    			addDeath();
-    			break;
-    		case "!setdeaths":
-    			if (!hasThePower(msg.userInfo)) {
-    				break;
-    			}
-    			setDeaths(message_split[1]);
-    			break;
-    		case "!charity":
-    		case "!bald":
-    		case "!donate":
-    			if (charityLink.length == 0) {
-    				break;
-    			}
-				sendMessage("Today's Charity Livestream is to benefit the St. Baldrick's Foundation for Children's Cancer Research. Dan will donate $5 for every subscription during this stream. Or, to donate directly to the campaign visit https://tiltify.com/@danleikr/danleikr-charity-livestream-to-conquer-kids-cancer");
-    			break;
-    		case "!donated":
-    			if (!hasThePower(msg.userInfo)) {
-    				break;
-    			}
-    			addDonation(message_split[1], false);
-    			break;
-    		case "!subbed":
-    			if (!hasThePower(msg.userInfo)) {
-    				break;
-    			}
-    			addDonation(message_split[1], true);
-    			break;
+			case "!attendance":
+				sendMessage(`Hi there ${msg.userInfo.displayName}! I have seen you drop by in ${persistentData.userAppearances[user]} different streams!`);
+				break;
+			case "!kingofthehill":
+			case "!koth":
+				sendMessage(`You can take over the hill with the King of the Hill channel point redemption. Every 5 minutes, the King is awarded a point. The current king is ${await getCurrentKingOfTheHill()}.`);
+				sendMessage(`Current Leaderboard: ${await kingOfTheHillLeaderboard()}`);
+				break;
 		}
 		let Hrrrrs = message.match(/Hrrrr/g);
 		if (Hrrrrs && Hrrrrs.length > 0) {
@@ -313,96 +324,45 @@ async function main() {
 		}
 	});
 
-	function sendMessage(message) {
-		chatClient.say(channelName, message);
-		console.log(`DanLeikrBot: ` + message);
-	}
-
-	function hasThePower(userInfo) {
-		return userInfo.isMod || userInfo.isBroadcaster;
-	}
-
-	const quarterHourMilliseconds = 900000;
-	var selfLastSent = false;
-
 	// Encouraging viewers to follow
 	var reminders = [
 	    "If you're enjoying the stream, please consider following the channel and showing some support! <3",
-	    "Type '!commands' to see a list of the commands DanLeikrBot knows",
+	    "Type '!commands' to see a list of the commands Bot_TheGamerBot knows",
 	    `Dan uploads all of his let's plays to his YouTube at ${youtubeLink} check it out!`,
 	    `Use the !gamesbeaten command to see the list of every game Dan has beaten`,
-	    "I've heard that following DanLeikr makes you at least marginally cooler Kappa",
+	    "I've heard that following Dan makes you at least marginally cooler Kappa",
 		"If you see something funny or awesome, clipping it would be fantastic, thank you!",
 		"Use the !quotes command if you want to see how dumb Dan can be sometimes",
 		"Want your own entrance sound effect? Check out the channel point redemption for it!",
 		"Dan has started a tier list for all of his games (!gamesbeaten). If he hasn't rated a game yet, you can use a channel point redemption to make him rate it!"
 	];
 	var sentReminders = [];
-	var reminderDelay = quarterHourMilliseconds * .5;
-	var state = 'r';
 	setTimeout(() => setInterval(function() {
 	    if (selfLastSent) {
 	    	return;
 	    };
 	    var message = "Hello World!";
-	    if (state == 'r'){
-	    	reminder = getRandomInt(reminders.length);
-	    	message = reminders[reminder];
-	    	sentReminders.push(message);
-	    	reminders.splice(reminder, 1);
-	    	if (reminders.length == 0){
-	    		reminders = [...sentReminders];
-	    		sentReminders = [];
-	    	}
-	    }
-	    else if (state == 'p'){
-	    	message = "Vote for Dan's next let's play here! " + pollLink;
-	    }
-	    else if (state == 'c'){
-	    	message = "Today's stream is a charity stream! Donate here! " + charityLink;
-	    }
+		var reminder = getRandomInt(reminders.length);
+		message = reminders[reminder];
+		sentReminders.push(message);
+		reminders.splice(reminder, 1);
+		if (reminders.length == 0){
+			reminders = [...sentReminders];
+			sentReminders = [];
+		}
 	    
 	    sendMessage(message);
 	    selfLastSent = true;
-	    progressState();
-	}, quarterHourMilliseconds), quarterHourMilliseconds * .5);
+	}, 900000), 450000);
 
-	function progressState(){
-		if (state == 'r'){
-			if (pollLink.length > 0){
-				state = 'p';
-			}
-			else if (charityLink.length > 0){
-				state = 'c';
-			}
-			else{
-				state = 'r';
-			}
-		}
-		else if (state == 'p'){
-			if (charityLink.length > 0){
-				state = 'c';
-			}
-			else {
-				state = 'r';
-			}
-		}
-		else if (state == 'c'){
-			state = 'r';
-		}
-	}
-
-	async function changeCurrentGoal(goal) {
-		fs.writeFileSync('./Current Goal.txt', `Current Goal:\n${goal}`);
-	 	sendMessage("Current Goal has been updated to: " + goal);
-	}
+	// -- QUOTES --
 
 	function getRandomInt(max){
 		return Math.floor(Math.random() * Math.floor(max));
 	}
 
 	async function getQuote(quoteNumber) {
-		var quotes = await fs.readFileSync('./code/bot/Quotes.txt', "utf8").split(/\r?\n/);
+		var quotes = persistentData.quotes;
 		if (quoteNumber == null) {
 			quoteNumber = getRandomInt(quotes.length);
 		} 
@@ -421,44 +381,78 @@ async function main() {
 			sendMessage("Silence is golden, but make sure you include a quote to be added next time ;)");
 			return;
 		}
-		await fs.appendFileSync('./code/bot/Quotes.txt', '\n' + quote);
+		persistentData.quotes.push(quote)
+		updatePersistentData();
 		getQuote("last");
 	}
 
-	async function addDeath() {
-		var deaths = await fs.readFileSync('./code/bot/Deaths.txt', 'utf8');
-		try {
-			deaths = parseInt(deaths.split(" ")[1]) + 1;
-		} catch {
-			deaths = 1;
-		}
-		setDeaths(deaths);
-	}
+	// -- KING OF THE HILL --
 
-	async function setDeaths(deaths) {
-		await fs.writeFileSync('./code/bot/Deaths.txt', `Deaths: ${deaths}`);
-		if (deaths == 69) {
-			sendMessage("Nice Kappa");
-		}
-	}
-
-	async function addDonation(amount, sub) {
-		var currentAmount = await fs.readFileSync('./Donations.txt', 'utf8');
-		var currentSubs = await fs.readFileSync('./Subs.txt', 'utf8');
-		try {
-			currentAmount = parseFloat(currentAmount.split(" ")[1].substring(1));
-			currentSubs = parseInt(currentSubs.split(" ")[1]);
-			if (sub) {
-				currentSubs += parseInt(amount);
-				await fs.writeFileSync('./Subs.txt', `Plus ${currentSubs} subs!`)
-			} else {
-				currentAmount += parseFloat(amount);
-				await fs.writeFileSync('./Donations.txt', `Amount: $${currentAmount.toFixed(2)}`)
+	async function startKingOfTheHill() {
+		setTimeout(() => setInterval(async function() {
+			const currentKing = await getCurrentKingOfTheHill();
+			if (currentKing === "None" || currentKing === "Dan_TheGamerMan") {
+				console.log("The Hill Needs a King");
+				return;
 			}
-		} catch(err) {
-				sendMessage("Error " + err.message);
+			let kingsRecord = persistentData.kingOfTheHill[currentKing];
+			if (kingsRecord === undefined) {
+				persistentData.kingOfTheHill[currentKing] = 1;
+			} else {
+				persistentData.kingOfTheHill[currentKing] += 1;
+			}
+			updatePersistentData();
+			console.log("King of the Hill Point Awarded To:", currentKing);
+		}, 300000), 300000);
+	}
+
+	async function getKingOfTheHillReward() {
+		const user = await apiClient.helix.users.getMe();
+
+		/*
+		let response = await apiClient.helix.channelPoints.createCustomReward(user.id, {
+			title: "King of the Hill",
+			cost: 500,
+			prompt: "Hill Taken By: Nobody",
+			is_enabled: true
+		});
+		*/			
+
+		const rewards = await apiClient.helix.channelPoints.getCustomRewards(user.id);
+		const kothReward = rewards.find(r => r.title === 'King of the Hill');
+		return kothReward;
+	}
+
+	async function getCurrentKingOfTheHill() {
+		let kothReward = await getKingOfTheHillReward();
+		let kothRewardPrompt = kothReward.propmt.split(" "); // Note the typo in propmt which is fixed in a later version
+		return kothRewardPrompt[kothRewardPrompt.length - 1];
+	}
+
+	async function updateKingOfTheHill(newKing) {
+		try {
+
+			let kothReward = await getKingOfTheHillReward();
+
+			const response = await apiClient.helix.channelPoints.updateCustomReward(kothReward.broadcasterId, kothReward.id, {
+				prompt: `Hill Taken By: ${newKing}. (Use !koth for more information)`
+			});
+
+			console.log(response);
+			
 		}
-		sendMessage(`So far we have donated $${currentAmount.toFixed(2)} plus ${currentSubs} subs each worth 5 dollars to St. Baldrick's Children's Cancer Research!`);
+		catch (error) {
+			console.error("Error:", error);
+		}
+	}
+
+	async function kingOfTheHillLeaderboard() {
+		return Object.entries(persistentData.kingOfTheHill).sort((a, b) => b[1] - a[1]).slice(0, 10).map((entry, index) => {
+			const position = index + 1;
+			const name = entry[0];
+			const score = entry[1];
+			return `${position}. ${name}: ${score} points`;
+		}).join(' | ');
 	}
 }
 

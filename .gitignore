@@ -1,8 +1,4 @@
 node_modules
 package-lock.json
-clientInfo.json
-dltokens.json
-tokens.json
-bot_login.txt
-How to refresh tokens.txt
-todo.txt
+*.txt
+persistent_data.json
