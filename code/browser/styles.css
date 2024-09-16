@@ -14,7 +14,7 @@
 
 @keyframes horizontal-reveal-right {
     0% {
-        right: -200px;
+        right: -400px;
     }
     5% {
         right: 0;
@@ -23,7 +23,7 @@
         right: 0;
     }
     100% {
-        right: -200px;
+        right: -400px;
     }
 }
 
@@ -144,7 +144,7 @@ body {
 }
 
 #danOwned {
-    width: 400px;
+    width: 800px;
     height: auto;
 
     position: absolute;
@@ -152,7 +152,8 @@ body {
     right: 10px;
 
     display: flex;
-    align-items: flex-start;
+    justify-content: center;
+    align-items: flex-end;
 }
 
 #danOwned img {
@@ -165,7 +166,7 @@ body {
 #danOwned div {
     margin-top: auto;
     font-family: Tahoma;
-    font-size: 25px;
+    font-size: 65px;
     font-weight: bold;
 
     letter-spacing: 3px;
@@ -184,13 +185,13 @@ body {
 }
 
 #danOwned div span::first-letter {
-    font-size: 35px;
+    font-size: 75px;
 }
 
 #toasty,
 #crispy,
 #frosty {
-    width: 200px;
+    width: 400px;
     height: auto;
 
     position: absolute;

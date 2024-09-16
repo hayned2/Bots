@@ -137,7 +137,7 @@ async function main() {
 		"Ah S***, Here We Go Again": "ahShit",
 		"Citation": "citation",
 		"King of the Hill": "hillTaken",
-		"Toasty": "toasty"
+		"Toasty!": "toasty"
 	}
 
 	const numHydrateSoundEffects = 3;
@@ -159,8 +159,9 @@ async function main() {
 			let alertName = browserRedemptions[message.rewardName];
 			if (message.rewardName == "Hydrate!") {
 				alertName += getRandomInt(numHydrateSoundEffects) + 1;
-			} else if (message.rewardName == "Toasty") {
-				const roll = Math.random() * 20;
+			} else if (message.rewardName == "Toasty!") {
+				const roll = Math.floor(Math.random() * 21);
+				console.log(roll);
 				if (roll == 1) {
 					alertName = "frosty";
 				} else if (roll == 2) {
