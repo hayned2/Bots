@@ -136,7 +136,8 @@ async function main() {
 		"Hydrate!": "hydrate",
 		"Ah S***, Here We Go Again": "ahShit",
 		"Citation": "citation",
-		"King of the Hill": "hillTaken"
+		"King of the Hill": "hillTaken",
+		"Toasty": "toasty"
 	}
 
 	const numHydrateSoundEffects = 3;
@@ -154,14 +155,24 @@ async function main() {
 			userHasAppeared(message.userName, message.userDisplayName);
 		}
 		if (browserRedemptions.hasOwnProperty(message.rewardName)) {
+
 			let alertName = browserRedemptions[message.rewardName];
-			let details = {};
 			if (message.rewardName == "Hydrate!") {
 				alertName += getRandomInt(numHydrateSoundEffects) + 1;
+			} else if (message.rewardName == "Toasty") {
+				const roll = Math.random() * 20;
+				if (roll == 1) {
+					alertName = "frosty";
+				} else if (roll == 2) {
+					alertName = "crispy";
+				}
 			}
+
+			let details = {};
 			if (message.message) {
-				details['text'] = message.message;
+				details = { formatArgs: [ message.message ] };
 			}
+
 			ws.send(JSON.stringify({type: "alert", alertName: alertName, details: details}));
 		}
 	});
@@ -179,7 +190,9 @@ async function main() {
 		"!quote (number)",
 		"!bttv",
 		"!gamesbeaten",
-		"!attendance"
+		"!attendance",
+		"!owned",
+		"!koth"
 	];
 
 	const bttvEmotes = [
@@ -315,6 +328,13 @@ async function main() {
 				sendMessage(`You can take over the hill with the King of the Hill channel point redemption. Every 5 minutes, the King is awarded a point. The current king is ${await getCurrentKingOfTheHill()}.`);
 				sendMessage(`Current Leaderboard: ${await kingOfTheHillLeaderboard()}`);
 				break;
+			case "!owned":
+			case "!danowned":
+				if (await danOwned()) {
+					sendMessage(`Dan has been owned ${persistentData.danOwnedCount} times!`);
+				} 
+				break;
+
 		}
 		let Hrrrrs = message.match(/Hrrrr/g);
 		if (Hrrrrs && Hrrrrs.length > 0) {
@@ -325,17 +345,7 @@ async function main() {
 	});
 
 	// Encouraging viewers to follow
-	var reminders = [
-	    "If you're enjoying the stream, please consider following the channel and showing some support! <3",
-	    "Type '!commands' to see a list of the commands Bot_TheGamerBot knows",
-	    `Dan uploads all of his let's plays to his YouTube at ${youtubeLink} check it out!`,
-	    `Use the !gamesbeaten command to see the list of every game Dan has beaten`,
-	    "I've heard that following Dan makes you at least marginally cooler Kappa",
-		"If you see something funny or awesome, clipping it would be fantastic, thank you!",
-		"Use the !quotes command if you want to see how dumb Dan can be sometimes",
-		"Want your own entrance sound effect? Check out the channel point redemption for it!",
-		"Dan has started a tier list for all of his games (!gamesbeaten). If he hasn't rated a game yet, you can use a channel point redemption to make him rate it!"
-	];
+	var reminders = [...persistentData.reminders];
 	var sentReminders = [];
 	setTimeout(() => setInterval(function() {
 	    if (selfLastSent) {
@@ -435,7 +445,7 @@ async function main() {
 			let kothReward = await getKingOfTheHillReward();
 
 			const response = await apiClient.helix.channelPoints.updateCustomReward(kothReward.broadcasterId, kothReward.id, {
-				prompt: `Hill Taken By: ${newKing}. (Use !koth for more information)`
+				prompt: `Use !koth for more information. Hill Taken By: ${newKing}`
 			});
 
 			console.log(response);
@@ -453,6 +463,18 @@ async function main() {
 			const score = entry[1];
 			return `${position}. ${name}: ${score} points`;
 		}).join(' | ');
+	}
+
+	async function danOwned() {
+		const now = Date.now();
+		if (now - persistentData.danOwnedTimestamp > 60000) {
+			persistentData.danOwnedCount += 1;
+			persistentData.danOwnedTimestamp = now;
+			updatePersistentData();
+			ws.send(JSON.stringify({ type: "alert", alertName: "danOwned", details: { formatArgs: [persistentData.danOwnedCount] } }));
+			return true;
+		}
+		return false;
 	}
 }
 
