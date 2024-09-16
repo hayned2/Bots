@@ -116,3 +116,22 @@ function randomDelay() {
 function getKey(obj, path) {
     return path.split('.').reduce((val, el) => val[el], obj);
 }
+
+/**
+ * Formats a string with as many arguments that are passed in. 
+ * 
+ * EX: 
+ *      formatString('this is some {0} string to {1}', 'random', 'test')
+ *          --> "this is some random string to test"
+ * 
+ * @param {string} stringText the text that is being formatted
+ * @returns the formatted string
+ */
+function formatString(stringText) {
+    let formatted = stringText;  
+    for (let i = 1; i < arguments.length; i++) {
+        let toReplace = `{${i-1}}`
+        formatted = formatted.replace(toReplace, arguments[i]);
+    }
+    return formatted;
+}

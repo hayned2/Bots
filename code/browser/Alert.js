@@ -45,8 +45,12 @@ class Alert {
             for (let [elemType, data] of Object.entries(this.#alertInfo.elems)) {
                 let elem = document.createElement(elemType);
                 // set the element attributes
-                for (let [attr, path] of Object.entries(data)) {
-                    elem[attr] = getKey(this.#data, path);
+                for (let [attr, val] of Object.entries(data)) {
+                    let attr_val = val;
+                    if (attr_val.includes("{") ) {
+                        attr_val = formatString(attr_val, ...getKey(this.#data, "details.formatArgs"));
+                    }
+                    elem[attr] = attr_val;
                 }
                 elems.push(elem);
             }
@@ -68,10 +72,17 @@ class Alert {
         }
 
         alert.addEventListener("ended", () => {
-            this.#htmlElement.className = this.#alertInfo.css[1];
+            this.#htmlElement.className = this.#alertInfo.css[1] || this.#htmlElement.className;
             if (this.#alertType === "audio" && !this.#alertInfo.img) {
                 if (this.#alertInfo.queued) setTimeout(playNext, 500, true);    // plays next in queue
                 this.#htmlElement.remove();
+            }
+            // for images that play a sound effect, let it run for its specified allotted time
+            else if (this.#alertType === "audio" && this.#alertInfo.img && this.#alertInfo.timeSpan) {
+                setTimeout(() => {
+                    if (this.#alertInfo.queued) setTimeout(playNext, 500, true);
+                    this.#htmlElement.remove();
+                }, this.#alertInfo.timeSpan);
             }
             // all video alerts and some audio alerts have ending animations
             else {

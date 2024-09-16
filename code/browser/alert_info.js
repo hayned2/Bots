@@ -164,30 +164,30 @@ let ALERTS = {
         img: "../../media/image/Citation.png",
         elems: {
             p: {
-                textContent: "details.text"
+                textContent: "{0}"
             }
         }
     },
     toasty: {
         src: "../../media/audio/toasty.wav",
         type: "audio/wav",
-        queued: false,
-        css: ["", ""],
-        img: ""
+        queued: true,
+        css: ["show-alert-horizontal-right", ""],
+        img: "../../media/image/dan_toasty.png"
     },
     crispy: {
         src: "../../media/audio/crispy.mp3",
         type: "audio/mp3",
-        queued: false,
-        css: ["", ""],
-        img: ""
+        queued: true,
+        css: ["show-alert-horizontal-right", ""],
+        img: "../../media/image/dan_crispy.png"
     },
     frosty: {
         src: "../../media/audio/frosty.mp3",
         type: "audio/mp3",
-        queued: false,
-        css: ["", ""],
-        img: ""
+        queued: true,
+        css: ["show-alert-horizontal-right", ""],
+        img: "../../media/image/dan_frosty.png"
     },
     notify: {
         src: "../../media/audio/imrcv.wav",
@@ -201,5 +201,24 @@ let ALERTS = {
         type: "audio/mp3",
         queued: false,
         css: ["", ""]
+    },
+    danOwned: {
+        src: "../../media/audio/krillin-owned-count.mp3",
+        type: "audio/mp3",
+        queued: true,
+        timeSpan: 5000,
+        css: ["", ""],
+
+        img: "../../media/image/DanOwnedCount.png",
+        elems: {
+            span: {
+                innerHTML: `<div>
+                <span>DAN</span>
+                <span>OWNED</span>
+                <span>COUNT: {0}</span>
+                </div>`
+            }
+        }
+        
     }
 }

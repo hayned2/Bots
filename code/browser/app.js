@@ -114,6 +114,18 @@ process.stdin.on('data', (data) => {
             break;
         }
 
+        case "ownedCount": {
+            let details = { formatArgs: [4] };
+            client.send(JSON.stringify({ type: "alert", alertName: "danOwned", details }));
+            break;
+        }
+
+        case "citation": {
+            let details = { formatArgs: ["haha you suck"] };
+            client.send(JSON.stringify({ type: "alert", alertName: "citation", details }))
+            break;
+        }
+
         default:
             console.log(`'${data[1]}' not a valid command`)
     }
