@@ -1,16 +1,15 @@
-const { RefreshableAuthProvider, StaticAuthProvider } = require('twitch-auth');
-const { ChatClient } = require('twitch-chat-client');
+const { RefreshingAuthProvider, StaticAuthProvider } = require('@twurple/auth');
+const { ChatClient } = require('@twurple/chat');
+const { ApiClient } = require('@twurple/api');
+const { PubSubClient } = require('@twurple/pubsub');
 const fs = require('fs');
-const { ApiClient } = require('twitch');
-const { PubSubClient } = require('twitch-pubsub-client');
 const WebSocket = require('ws');
-const { start } = require('repl');
 
 async function main() {
 
 	// -- AUTHORIZATION + CONNECTION --
 
-	const channelName = "#dan_thegamerman"
+	const channelName = "dan_thegamerman"
 	const persistentData = JSON.parse(fs.readFileSync('./persistent_data.json'));
 
 	function updatePersistentData() {
@@ -18,12 +17,10 @@ async function main() {
 	};
 
 	// BotTheGamerBot connection
-	const chatBotAuthProvider = new RefreshableAuthProvider(
-		new StaticAuthProvider(persistentData.clientInfo.clientId, persistentData.botAccessToken.accessToken),
+	const chatBotAuthProvider = new RefreshingAuthProvider(
 		{
+			clientId: persistentData.clientInfo.clientId,
 			clientSecret: persistentData.clientInfo.clientSecret,
-			refreshToken: persistentData.botAccessToken.refreshToken,
-			expiry: persistentData.botAccessToken.expiryTimestamp === null ? null : new Date(persistentData.botAccessToken.expiryTimestamp),
 			onRefresh: async ({ accessToken, refreshToken, expiryDate }) => {
 				persistentData.botAccessToken = {
 					accessToken,
@@ -34,14 +31,13 @@ async function main() {
 			}
 		}
 	);
+	await chatBotAuthProvider.addUserForToken(persistentData.botAccessToken, ["chat"]);
 
 	// PubSub connection
-	const pubSubAuthProvider = new RefreshableAuthProvider(
-		new StaticAuthProvider(persistentData.clientInfo.clientId, persistentData.pubSubAccessToken.accessToken),
+	const pubSubAuthProvider = new RefreshingAuthProvider(
 		{
+			clientId: persistentData.clientInfo.clientId,
 			clientSecret: persistentData.clientInfo.clientSecret,
-			refreshToken:persistentData.pubSubAccessToken.refreshToken,
-			expiry: persistentData.pubSubAccessToken.expiryTimestamp === null ? null : new Date(persistentData.pubSubAccessToken.expiryTimestamp),
 			onRefresh: async ({ accessToken, refreshToken, expiryDate }) => {
 				persistentData.pubSubAccessToken = {
 					accessToken,
@@ -52,9 +48,10 @@ async function main() {
 			}
 		}
 	);
+	await pubSubAuthProvider.addUserForToken(persistentData.pubSubAccessToken);
 
 	// Connect to chat and send a message
-	const chatClient = new ChatClient(chatBotAuthProvider, { channels: ['dan_thegamerman'] });
+	const chatClient = new ChatClient({authProvider: chatBotAuthProvider, channels: [channelName] });
 	chatClient.onMessageFailed((_, reason) => console.log(`Message '${message}' failed to send. Reason: '${reason}'`));
 	await chatClient.connect();
 	setTimeout(() => startup(), 3000);
@@ -66,8 +63,8 @@ async function main() {
 
 	// Connect to redemptions through pubsub
 	const apiClient = new ApiClient({ authProvider: pubSubAuthProvider });
-	const pubSubClient = new PubSubClient();
-	const userId = await pubSubClient.registerUserListener(apiClient);
+	const broadcaster = await apiClient.users.getUserByName(channelName);
+	const pubSubClient = new PubSubClient({ authProvider: pubSubAuthProvider });
 
 	// -- BROWSER SOURCE SET-UP --
 
@@ -143,20 +140,20 @@ async function main() {
 	const numHydrateSoundEffects = 3;
 	const numVillagerSoundEffects = 15;
 
-	const _ = await pubSubClient.onRedemption(userId, message => {
-		if (message.rewardName === "King of the Hill") {
+	const _ = await pubSubClient.onRedemption(broadcaster.id, message => {
+		if (message.rewardTitle === "King of the Hill") {
 			updateKingOfTheHill(message.userDisplayName);
 			sendMessage(`${message.userDisplayName} has taken the hill.`);
 		}
 		else {
-			sendMessage(`${message.userDisplayName} just redeemed ${message.rewardName} for ${message.rewardCost} channel points!`);
+			sendMessage(`${message.userDisplayName} just redeemed ${message.rewardTitle} for ${message.rewardCost} channel points!`);
 		}
 		if (!usersSeenToday.has(message.userName)) {
 			userHasAppeared(message.userName, message.userDisplayName);
 		}
-		if (browserRedemptions.hasOwnProperty(message.rewardName)) {
+		if (browserRedemptions.hasOwnProperty(message.rewardTitle)) {
 
-			let alertName = browserRedemptions[message.rewardName];
+			let alertName = browserRedemptions[message.rewardTitle];
 			if (message.rewardName == "Hydrate!") {
 				alertName += getRandomInt(numHydrateSoundEffects) + 1;
 			} else if (message.rewardName == "Toasty!") {
@@ -193,7 +190,8 @@ async function main() {
 		"!gamesbeaten",
 		"!attendance",
 		"!owned",
-		"!koth"
+		"!koth",
+		"!followage"
 	];
 
 	const bttvEmotes = [
@@ -335,7 +333,14 @@ async function main() {
 					sendMessage(`Dan has been owned ${persistentData.danOwnedCount} times!`);
 				} 
 				break;
-
+			case "!followage":
+				let follow = await followage(msg.userInfo.userId);
+				if (follow == null) {
+					sendMessage(`${msg.userInfo.displayName}, you're not following Dan (but you probably should be!)`);
+				} else {
+					sendMessage(`${msg.userInfo.displayName}, you've been following Dan for ${follow}!`);
+				}
+				break;
 		}
 		let Hrrrrs = message.match(/Hrrrr/g);
 		if (Hrrrrs && Hrrrrs.length > 0) {
@@ -418,10 +423,8 @@ async function main() {
 	}
 
 	async function getKingOfTheHillReward() {
-		const user = await apiClient.helix.users.getMe();
-
 		/*
-		let response = await apiClient.helix.channelPoints.createCustomReward(user.id, {
+		let response = await apiClient.channelPoints.createCustomReward(broadcaster.id, {
 			title: "King of the Hill",
 			cost: 500,
 			prompt: "Hill Taken By: Nobody",
@@ -429,14 +432,14 @@ async function main() {
 		});
 		*/			
 
-		const rewards = await apiClient.helix.channelPoints.getCustomRewards(user.id);
+		const rewards = await apiClient.channelPoints.getCustomRewards(broadcaster.id);
 		const kothReward = rewards.find(r => r.title === 'King of the Hill');
 		return kothReward;
 	}
 
 	async function getCurrentKingOfTheHill() {
 		let kothReward = await getKingOfTheHillReward();
-		let kothRewardPrompt = kothReward.propmt.split(" "); // Note the typo in propmt which is fixed in a later version
+		let kothRewardPrompt = kothReward.prompt.split(" "); // Note the typo in propmt which is fixed in a later version
 		return kothRewardPrompt[kothRewardPrompt.length - 1];
 	}
 
@@ -445,7 +448,7 @@ async function main() {
 
 			let kothReward = await getKingOfTheHillReward();
 
-			const response = await apiClient.helix.channelPoints.updateCustomReward(kothReward.broadcasterId, kothReward.id, {
+			const response = await apiClient.channelPoints.updateCustomReward(kothReward.broadcasterId, kothReward.id, {
 				prompt: `Use !koth for more information. Hill Taken By: ${newKing}`
 			});
 
@@ -476,6 +479,65 @@ async function main() {
 			return true;
 		}
 		return false;
+	}
+
+	async function followage(userId) {
+		try {
+			const follow = await broadcaster.getChannelFollower(userId);
+
+			if (follow == null) {
+				return null;
+			}
+
+			const now = new Date();
+		
+		// Calculate the years first
+		let years = now.getFullYear() - follow.followDate.getFullYear();
+
+		// Check if the current year’s follow date has passed, if not, subtract a year
+		if (now.getMonth() < follow.followDate.getMonth() || (now.getMonth() === follow.followDate.getMonth() && now.getDate() < follow.followDate.getDate())) {
+			years--;
+		}
+
+		// Adjust follow date to the same year as 'now' after calculating full years
+		let anniversaryThisYear = new Date(follow.followDate);
+		anniversaryThisYear.setFullYear(now.getFullYear());
+
+		if (now < anniversaryThisYear) {
+			anniversaryThisYear.setFullYear(now.getFullYear() - 1);
+		}
+
+		// Calculate months
+		let months = now.getMonth() - anniversaryThisYear.getMonth();
+		if (months < 0) {
+			months += 12;
+		}
+
+		// Calculate the number of days in the previous month to adjust day overflow
+		const lastMonth = new Date(now.getFullYear(), now.getMonth(), 0); // Get the previous month
+		let days = now.getDate() - follow.followDate.getDate();
+
+		if (days < 0) {
+			months--;
+			if (months < 0) {
+				years--;
+				months = 11;
+			}
+			days += lastMonth.getDate(); // Add the number of days in the previous month
+		}
+
+		// Calculate hours
+		const diff = Math.abs(now - follow.followDate);
+		const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+		// Output the duration in years, months, days, and hours
+		return `${years} years, ${months} months, ${days} days, and ${hours} hours`;
+		
+		} catch (error) {
+		  console.error('Error fetching follow data:', error);
+		  return null;
+		}
+
 	}
 }
 
